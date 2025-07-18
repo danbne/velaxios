@@ -39,6 +39,9 @@ const AuthCallback: React.FC = () => {
 				localStorage.setItem("token", token);
 				console.log("AuthCallback: Token stored, navigating immediately");
 
+				// Dispatch custom event to notify App component
+				window.dispatchEvent(new CustomEvent("tokenStored"));
+
 				hasNavigated.current = true;
 				navigate("/projects", { replace: true });
 				return;
@@ -72,6 +75,9 @@ const AuthCallback: React.FC = () => {
 					console.log(
 						"AuthCallback: Token stored via API, navigating immediately"
 					);
+
+					// Dispatch custom event to notify App component
+					window.dispatchEvent(new CustomEvent("tokenStored"));
 
 					hasNavigated.current = true;
 					navigate("/projects", { replace: true });

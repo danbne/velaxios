@@ -103,15 +103,32 @@ function App() {
 	}, []);
 
 	useEffect(() => {
-		// Add a small delay to ensure any token storage from AuthCallback has completed
+		// Initial auth check with small delay to allow for token storage
 		const timer = setTimeout(() => {
 			checkAuth();
-		}, 100);
+		}, 50);
 
-		window.addEventListener("storage", checkAuth);
+		// Listen for custom token stored event (same tab)
+		const handleTokenStored = () => {
+			console.log("App: Token stored event received, re-checking auth...");
+			checkAuth();
+		};
+
+		// Listen for localStorage changes (cross-tab)
+		const handleStorageChange = (e: StorageEvent) => {
+			if (e.key === "token") {
+				console.log("App: Token changed in localStorage, re-checking auth...");
+				checkAuth();
+			}
+		};
+
+		window.addEventListener("tokenStored", handleTokenStored);
+		window.addEventListener("storage", handleStorageChange);
+
 		return () => {
 			clearTimeout(timer);
-			window.removeEventListener("storage", checkAuth);
+			window.removeEventListener("tokenStored", handleTokenStored);
+			window.removeEventListener("storage", handleStorageChange);
 		};
 	}, [checkAuth]);
 
