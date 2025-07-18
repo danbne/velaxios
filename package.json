@@ -1,0 +1,23 @@
+{
+	"name": "velaxios",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"client": "yarn workspace client dev",
+		"server": "yarn workspace server dev",
+		"dev": "concurrently \"yarn client\" \"yarn server\"",
+		"start": "yarn client & yarn server",
+		"type-check": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"concurrently": "^8.2.2",
+		"typescript": "^5.2.2"
+	},
+	"version": "1.0.0",
+	"main": "index.js",
+	"repository": "https://github.com/danbne/velaxios.git",
+	"author": "danbne <danieljboys@gmail.com>",
+	"license": "MIT"
+}

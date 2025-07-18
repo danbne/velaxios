@@ -1,0 +1,132 @@
+/**
+ * AG Grid Theme CSS
+ * 
+ * This file contains the custom theme styling for AG Grid components.
+ * It defines CSS custom properties (variables) for consistent theming
+ * and provides styling for grid containers, items, buttons, and interactive elements.
+ */
+
+:root {
+	--primary: #1caaa6; /* Teal, ideal for buttons or headers */
+	--secondary: #15294e; /* Deep navy, great for backgrounds or text */
+	--accent: #04d9d2; /* Bright cyan, perfect for highlights or calls-to-action */
+	--background: #9dbcf5; /* Light blue, soft for page backgrounds */
+	--highlight: #5ebdba; /* Muted teal, for secondary elements or hover states */
+	--text-dark: #1c1c1c; /* Dark gray from document, for readable text */
+	--text-light: #ffffff; /* White, for text on dark backgrounds */
+}
+
+/* Grid Container */
+/* Main container styling for grid components */
+.as-grid {
+	background-color: var(--background);
+	color: var(--text-dark);
+	font-family: Arial, sans-serif;
+}
+
+/* Grid Items */
+/* Individual grid item styling with hover effects */
+.as-grid__item {
+	background-color: var(--secondary);
+	color: var(--text-light);
+	border: 1px solid var(--highlight);
+	padding: 1rem;
+	transition: all 0.3s ease;
+}
+
+/* Hover State for Grid Items */
+/* Enhanced visual feedback when hovering over grid items */
+.as-grid__item:hover {
+	background-color: var(--highlight);
+	border-color: var(--accent);
+	transform: translateY(-2px);
+}
+
+/* Buttons within Grid */
+/* Styling for buttons used within grid components */
+.as-grid__button {
+	background-color: var(--primary);
+	color: var(--text-light);
+	border: none;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	transition: background-color 0.3s ease;
+}
+
+.as-grid__button:hover {
+	background-color: var(--accent);
+}
+
+/* Headers within Grid */
+.as-grid__header {
+	background-color: var(--secondary);
+	color: var(--text-light);
+	padding: 1rem;
+	border-bottom: 2px solid var(--primary);
+}
+
+/* Active State for Interactive Elements */
+.as-grid__item--active {
+	background-color: var(--accent);
+	color: var(--text-dark);
+	border-color: var(--primary);
+}
+
+/* Row and cell styles for change tracking */
+.ag-row-new {
+	background-color: #e8f5e8 !important;
+	border-left: 3px solid #4caf50 !important;
+}
+.ag-row-new .ag-cell {
+	background-color: #e8f5e8 !important;
+}
+.ag-row-dirty {
+	background-color: #fff3e0 !important;
+	border-left: 3px solid #ff9800 !important;
+}
+.ag-row-dirty .ag-cell {
+	background-color: #fff3e0 !important;
+}
+.ag-row-deleted {
+	background-color: #ffebee !important;
+	border-left: 3px solid #f44336 !important;
+	opacity: 0.6;
+}
+.ag-row-deleted .ag-cell {
+	background-color: #ffebee !important;
+}
+.ag-row-failed {
+	background-color: #ffebee !important;
+}
+.ag-row-failed .ag-cell {
+	background-color: #ffebee !important;
+}
+.ag-cell-new {
+	background-color: #e8f5e8 !important;
+	border-left: 2px solid #4caf50 !important;
+}
+.ag-cell-dirty {
+	background-color: #fff3e0 !important;
+	border-left: 2px solid #ff9800 !important;
+}
+.ag-cell-deleted {
+	background-color: #ffebee !important;
+	border-left: 2px solid #f44336 !important;
+	opacity: 0.6;
+}
+.ag-cell-failed {
+	background-color: #ffebee !important;
+	border-left: 2px solid #f44336 !important;
+}
+
+/* Responsive Grid Layout */
+/* Mobile-specific styling for grid components */
+@media (max-width: 768px) {
+	.as-grid {
+		background-color: var(--background);
+	}
+
+	.as-grid__item {
+		border: 1px solid var(--highlight);
+	}
+}

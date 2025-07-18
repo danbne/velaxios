@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"moduleResolution": "node",
+		"baseUrl": ".",
+		"paths": {
+			"@client/*": ["packages/client/src/*"],
+			"@server/*": ["packages/server/src/*"]
+		},
+		"strict": true,
+		"skipLibCheck": true
+	},
+	"files": [],
+	"references": [{ "path": "./packages/client/tsconfig.json" }]
+}

@@ -1,0 +1,175 @@
+/* Only keep CSS variables and utility classes for background/text colors. Remove all custom classes for buttons, nav, header, etc. */
+:root {
+	--primary: #1caaa6; /* Teal, ideal for buttons or headers */
+	--secondary: #15294e; /* Deep navy, great for backgrounds or text */
+	--accent: #04d9d2; /* Bright cyan, perfect for highlights or calls-to-action */
+	--background: #9dbcf5; /* Light blue, soft for page backgrounds */
+	--highlight: #5ebdba; /* Muted teal, for secondary elements or hover states */
+	--text-dark: #1c1c1c; /* Dark gray from document, for readable text */
+	--text-light: #ffffff; /* White, for text on dark backgrounds */
+
+	/* Missing variables that were referenced but not defined */
+	--sidebar-bg: #f8fafc; /* Light gray for sidebar background */
+	--page-bg: #ffffff; /* White for main page background */
+	--grid-bg: #f1f5f9; /* Light gray for grid background */
+	--font-main: system-ui, Avenir, Helvetica, Arial, sans-serif;
+	--border-radius: 0.5rem;
+}
+
+body {
+	background: var(--page-bg);
+	color: var(--text-dark);
+	font-family: var(--font-main);
+}
+
+/* Header styles */
+.header {
+	background-color: var(--page-bg);
+	border-bottom: 1px solid #e2e8f0;
+	padding: 1rem 1.5rem;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Button styles */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.5rem 1rem;
+	border-radius: var(--border-radius);
+	font-weight: 500;
+	font-size: 0.875rem;
+	transition: all 0.2s;
+	cursor: pointer;
+	border: 1px solid transparent;
+}
+
+.btn-accent {
+	background-color: var(--accent);
+	color: var(--text-dark);
+}
+
+.btn-accent:hover {
+	background-color: var(--highlight);
+	transform: translateY(-1px);
+}
+
+/* Navigation link styles */
+.nav-link {
+	display: flex;
+	align-items: center;
+	padding: 0.75rem 1rem;
+	border-radius: var(--border-radius);
+	color: var(--text-dark);
+	text-decoration: none;
+	transition: all 0.2s;
+	font-weight: 500;
+}
+
+.nav-link:hover {
+	background-color: var(--highlight);
+	color: var(--text-dark);
+}
+
+.nav-link-active {
+	background-color: var(--primary);
+	color: var(--text-light);
+}
+
+.nav-link-active:hover {
+	background-color: var(--highlight);
+	color: var(--text-dark);
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+	background-color: var(--page-bg);
+	border: 1px solid #e2e8f0;
+	border-radius: 50%;
+	width: 1.5rem;
+	height: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-toggle:hover {
+	background-color: var(--highlight);
+	transform: scale(1.05);
+}
+
+/* Example utility classes */
+.bg-primary {
+	background-color: var(--primary) !important;
+}
+.bg-secondary {
+	background-color: var(--secondary) !important;
+}
+.bg-accent {
+	background-color: var(--accent) !important;
+}
+.bg-highlight {
+	background-color: var(--highlight) !important;
+}
+.bg-sidebar {
+	background-color: var(--sidebar-bg) !important;
+}
+.bg-page {
+	background-color: var(--page-bg) !important;
+}
+.bg-grid {
+	background-color: var(--grid-bg) !important;
+}
+.text-primary {
+	color: var(--primary) !important;
+}
+.text-secondary {
+	color: var(--secondary) !important;
+}
+.text-accent {
+	color: var(--accent) !important;
+}
+.text-light {
+	color: var(--text-light) !important;
+}
+.text-dark {
+	color: var(--text-dark) !important;
+}
+
+/* Essential grid layout styles migrated from ProjectGrid.css */
+.example-wrapper {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.button-group {
+	padding-bottom: 4px;
+	display: inline-block;
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
+	font-size: 13px;
+}
+
+.button-group > * {
+	margin-right: 4px;
+}
+
+.grid-container {
+	min-height: 400px;
+	height: 100%;
+	width: 100%;
+	position: relative;
+}
+
+.grid-wrapper {
+	height: 100% !important;
+	width: 100% !important;
+	min-height: 300px;
+}
+
+.ag-theme-alpine {
+	height: 100% !important;
+	width: 100% !important;
+}
