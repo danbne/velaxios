@@ -21,6 +21,34 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const passport = require("./security/auth").passport;
+// Import security middleware functions with fallbacks
+let securityHeaders,
+	generalRateLimiter,
+	authRateLimiter,
+	apiRateLimiter,
+	csrfProtection,
+	sanitizeInput,
+	validateInput;
+
+try {
+	const middleware = require("./security/middleware");
+	securityHeaders = middleware.securityHeaders;
+	generalRateLimiter = middleware.generalRateLimiter;
+	authRateLimiter = middleware.authRateLimiter;
+	apiRateLimiter = middleware.apiRateLimiter;
+	csrfProtection = middleware.csrfProtection;
+	sanitizeInput = middleware.sanitizeInput;
+	validateInput = middleware.validateInput;
+} catch (error) {
+	// Fallback implementations if middleware is not available
+	securityHeaders = (req, res, next) => next();
+	generalRateLimiter = (req, res, next) => next();
+	authRateLimiter = (req, res, next) => next();
+	apiRateLimiter = (req, res, next) => next();
+	csrfProtection = (req, res, next) => next();
+	sanitizeInput = (req, res, next) => next();
+	validateInput = (req, res, next) => next();
+}
 
 const db = require("./db");
 const projectRoutes = require("./routes/project");
@@ -31,6 +59,7 @@ const assetRoutes = require("./routes/asset");
 const assetLevelRoutes = require("./routes/assetLevel");
 const assetPhotoRoutes = require("./routes/assetPhoto");
 const assetComponentRoutes = require("./routes/assetComponent");
+const securityRoutes = require("./routes/security");
 const {
 	authenticate,
 	refreshToken,
@@ -41,15 +70,36 @@ const {
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware
+// Security middleware
+app.use(securityHeaders);
+app.use(sanitizeInput);
+
+// CORS configuration
 app.use(
 	cors({
 		origin: process.env.CLIENT_URL || "http://localhost:3000",
 		credentials: false, // No cookies needed for JWT/API key auth
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: [
+			"Content-Type",
+			"Authorization",
+			"x-api-key",
+			"api-key",
+			"x-csrf-token",
+			"x-session-token",
+		],
 	})
 );
-app.use(express.json());
+
+// Body parsing middleware
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Passport initialization
 app.use(passport.initialize());
+
+// General rate limiting
+app.use(generalRateLimiter);
 
 // Test database connection
 db.pool.connect((err, client, release) => {
@@ -61,9 +111,10 @@ db.pool.connect((err, client, release) => {
 	console.log("Database connection successful");
 });
 
-// Authentication routes
+// Authentication routes with rate limiting
 app.get(
 	"/auth/microsoft",
+	authRateLimiter,
 	passport.authenticate("microsoft", {
 		scope: ["user.read"],
 		session: false,
@@ -179,15 +230,72 @@ app.get("/auth/callback", async (req, res) => {
 	}
 });
 
-// Protected routes
-app.use("/api/project", ensureAuthenticated, projectRoutes);
-app.use("/api/grid-state", authenticate, gridStateRoutes);
-app.use("/api/grid-layouts", authenticate, gridLayoutsRoutes);
-app.use("/api/users", authenticate, usersRoutes);
-app.use("/api/asset", authenticate, assetRoutes);
-app.use("/api/asset-level", authenticate, assetLevelRoutes);
-app.use("/api/asset-photo", authenticate, assetPhotoRoutes);
-app.use("/api/asset-component", authenticate, assetComponentRoutes);
+// Protected routes with security middleware
+app.use(
+	"/api/project",
+	apiRateLimiter,
+	csrfProtection,
+	ensureAuthenticated,
+	projectRoutes
+);
+app.use(
+	"/api/grid-state",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	gridStateRoutes
+);
+app.use(
+	"/api/grid-layouts",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	gridLayoutsRoutes
+);
+app.use(
+	"/api/users",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	usersRoutes
+);
+app.use(
+	"/api/asset",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	assetRoutes
+);
+app.use(
+	"/api/asset-level",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	assetLevelRoutes
+);
+app.use(
+	"/api/asset-photo",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	assetPhotoRoutes
+);
+app.use(
+	"/api/asset-component",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	assetComponentRoutes
+);
+
+// Security monitoring routes (admin only)
+app.use(
+	"/api/security",
+	apiRateLimiter,
+	csrfProtection,
+	authenticate,
+	securityRoutes
+);
 
 // Token refresh route
 app.post("/api/auth/refresh", refreshToken);

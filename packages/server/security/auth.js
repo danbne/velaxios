@@ -3,9 +3,82 @@ const MicrosoftStrategy = require("passport-microsoft").Strategy;
 const jwt = require("jsonwebtoken");
 const db = require("../db");
 
-if (!process.env.JWT_SECRET) {
+// Import security middleware functions
+let hashApiKey, verifyApiKey, generateJWTSecret;
+
+try {
+	const middleware = require("./middleware");
+	hashApiKey = middleware.hashApiKey;
+	verifyApiKey = middleware.verifyApiKey;
+	generateJWTSecret = middleware.generateJWTSecret;
+} catch (error) {
+	// Fallback implementations if middleware is not available
+	hashApiKey = async (apiKey) => {
+		const crypto = require("crypto");
+		return crypto.createHash("sha256").update(apiKey).digest("hex");
+	};
+
+	verifyApiKey = async (plainApiKey, hashedApiKey) => {
+		const crypto = require("crypto");
+		const hash = crypto.createHash("sha256").update(plainApiKey).digest("hex");
+		return hash === hashedApiKey;
+	};
+
+	generateJWTSecret = () => {
+		const crypto = require("crypto");
+		return crypto.randomBytes(64).toString("hex");
+	};
+}
+
+// JWT secret management with rotation support
+let currentJWTSecret = process.env.JWT_SECRET;
+let previousJWTSecret = process.env.JWT_SECRET_PREVIOUS;
+
+if (!currentJWTSecret) {
 	throw new Error(
 		"JWT_SECRET environment variable is not set. Please define it in your environment."
+	);
+}
+
+// JWT secret rotation function
+const rotateJWTSecret = () => {
+	previousJWTSecret = currentJWTSecret;
+	currentJWTSecret = generateJWTSecret();
+	console.log("🔐 JWT secret rotated successfully");
+	return currentJWTSecret;
+};
+
+// Schedule JWT secret rotation (optional, only in production)
+if (
+	process.env.ENABLE_JWT_ROTATION === "true" ||
+	process.env.NODE_ENV === "production"
+) {
+	// Use a smaller interval to avoid 32-bit integer overflow
+	// Check every hour and rotate if 30 days have passed
+	const checkInterval = 60 * 60 * 1000; // 1 hour
+	const rotationPeriod = 30 * 24 * 60 * 60 * 1000; // 30 days
+	let lastRotation = Date.now();
+
+	setInterval(() => {
+		const now = Date.now();
+		if (now - lastRotation >= rotationPeriod) {
+			if (process.env.NODE_ENV === "production") {
+				rotateJWTSecret();
+			} else {
+				// In development, just rotate silently
+				previousJWTSecret = currentJWTSecret;
+				currentJWTSecret = generateJWTSecret();
+			}
+			lastRotation = now;
+		}
+	}, checkInterval);
+
+	console.log(
+		`🔐 JWT secret rotation enabled (checking every hour, rotating every 30 days)`
+	);
+} else {
+	console.log(
+		"🔐 JWT secret rotation disabled (set ENABLE_JWT_ROTATION=true to enable)"
 	);
 }
 
@@ -74,7 +147,7 @@ passport.use(
 
 				const token = jwt.sign(
 					{ userId: user.user_id, email: user.email },
-					process.env.JWT_SECRET,
+					currentJWTSecret,
 					{ expiresIn: "1h" }
 				);
 
@@ -95,8 +168,8 @@ passport.deserializeUser((user, done) => {
 	done(null, user);
 });
 
-// Verify API key authentication
-const verifyApiKey = async (req, res, next) => {
+// Verify API key authentication with hashed keys
+const verifyApiKeyAuth = async (req, res, next) => {
 	const apiKey = req.headers["x-api-key"] || req.headers["api-key"];
 	if (!apiKey) {
 		return res.status(401).json({ error: "No API key provided" });
@@ -104,22 +177,27 @@ const verifyApiKey = async (req, res, next) => {
 
 	try {
 		const { rows } = await db.query(
-			"SELECT user_id, email FROM users WHERE api_key = $1",
-			[apiKey]
+			"SELECT user_id, email, api_key_hash FROM users WHERE api_key_hash IS NOT NULL",
+			[]
 		);
 
-		if (rows.length === 0) {
-			return res.status(401).json({ error: "Invalid API key" });
+		// Check against all hashed API keys
+		for (const row of rows) {
+			const isValid = await verifyApiKey(apiKey, row.api_key_hash);
+			if (isValid) {
+				req.user = { userId: row.user_id, email: row.email };
+				return next();
+			}
 		}
 
-		req.user = { userId: rows[0].user_id, email: rows[0].email };
-		next();
+		return res.status(401).json({ error: "Invalid API key" });
 	} catch (err) {
+		console.error("API key verification error:", err);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };
 
-// Verify JWT authentication
+// Verify JWT authentication with secret rotation support
 const verifyJWT = (req, res, next) => {
 	const token = req.headers.authorization?.split(" ")[1];
 	if (!token) {
@@ -132,11 +210,23 @@ const verifyJWT = (req, res, next) => {
 	}
 
 	try {
-		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		// Try current secret first
+		const decoded = jwt.verify(token, currentJWTSecret);
 		req.user = decoded;
 		next();
 	} catch (err) {
-		res.status(401).json({ error: "Invalid token" });
+		// If current secret fails, try previous secret (for graceful rotation)
+		if (previousJWTSecret && previousJWTSecret !== currentJWTSecret) {
+			try {
+				const decoded = jwt.verify(token, previousJWTSecret);
+				req.user = decoded;
+				next();
+			} catch (prevErr) {
+				res.status(401).json({ error: "Invalid token" });
+			}
+		} else {
+			res.status(401).json({ error: "Invalid token" });
+		}
 	}
 };
 
@@ -145,7 +235,7 @@ const authenticate = async (req, res, next) => {
 	// Check for API key first
 	const apiKey = req.headers["x-api-key"] || req.headers["api-key"];
 	if (apiKey) {
-		return verifyApiKey(req, res, next);
+		return verifyApiKeyAuth(req, res, next);
 	}
 
 	// Fall back to JWT authentication
@@ -154,7 +244,7 @@ const authenticate = async (req, res, next) => {
 
 // Function to generate a new token
 const generateToken = (userId, email) => {
-	return jwt.sign({ userId, email }, process.env.JWT_SECRET, {
+	return jwt.sign({ userId, email }, currentJWTSecret, {
 		expiresIn: "1h",
 	});
 };
@@ -173,7 +263,7 @@ const refreshToken = (req, res) => {
 		}
 
 		// Verify the current token
-		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		const decoded = jwt.verify(token, currentJWTSecret);
 
 		// Generate a new token
 		const newToken = generateToken(decoded.userId, decoded.email);
@@ -204,7 +294,7 @@ const ensureAuthenticated = async (req, res, next) => {
 module.exports = {
 	passport,
 	verifyJWT,
-	verifyApiKey,
+	verifyApiKey: verifyApiKeyAuth,
 	authenticate,
 	refreshToken,
 	generateToken,

@@ -3,28 +3,56 @@ const router = express.Router();
 const db = require("../db");
 const { z } = require("zod");
 const crypto = require("crypto");
+// Import security middleware functions
+let hashApiKey, verifyApiKey;
 
-// Get all users
+try {
+	const middleware = require("../security/middleware");
+	hashApiKey = middleware.hashApiKey;
+	verifyApiKey = middleware.verifyApiKey;
+} catch (error) {
+	// Fallback implementations if middleware is not available
+	hashApiKey = async (apiKey) => {
+		const crypto = require("crypto");
+		return crypto.createHash("sha256").update(apiKey).digest("hex");
+	};
+
+	verifyApiKey = async (plainApiKey, hashedApiKey) => {
+		const crypto = require("crypto");
+		const hash = crypto.createHash("sha256").update(plainApiKey).digest("hex");
+		return hash === hashedApiKey;
+	};
+}
+
+const { body, validationResult } = require("express-validator");
+
+// Get all users (with PII protection)
 router.get("/", async (req, res, next) => {
 	try {
-		const { rows } = await db.query(`
+		const { rows } = await db.query(
+			`
 			SELECT 
 				user_id, 
-				email, 
+				CASE 
+					WHEN $1 = true THEN email 
+					ELSE CONCAT(LEFT(email, 2), '***', RIGHT(email, LENGTH(email) - POSITION('@' IN email) + 1)) 
+				END as email,
 				microsoft_id, 
 				last_login, 
 				created_at,
-				CASE WHEN api_key IS NOT NULL THEN true ELSE false END as has_api_key
+				CASE WHEN api_key_hash IS NOT NULL THEN true ELSE false END as has_api_key
 			FROM users 
 			ORDER BY created_at DESC
-		`);
+		`,
+			[req.user?.userId === req.query.showFullEmail]
+		);
 		res.json({ users: rows });
 	} catch (error) {
 		next(error);
 	}
 });
 
-// Get user by ID
+// Get user by ID (with PII protection)
 router.get("/:id", async (req, res, next) => {
 	try {
 		const { id } = req.params;
@@ -32,15 +60,18 @@ router.get("/:id", async (req, res, next) => {
 			`
 			SELECT 
 				user_id, 
-				email, 
+				CASE 
+					WHEN $2 = true THEN email 
+					ELSE CONCAT(LEFT(email, 2), '***', RIGHT(email, LENGTH(email) - POSITION('@' IN email) + 1)) 
+				END as email,
 				microsoft_id, 
 				last_login, 
 				created_at,
-				CASE WHEN api_key IS NOT NULL THEN true ELSE false END as has_api_key
+				CASE WHEN api_key_hash IS NOT NULL THEN true ELSE false END as has_api_key
 			FROM users 
 			WHERE user_id = $1
 		`,
-			[id]
+			[id, req.user?.userId === id]
 		);
 
 		if (rows.length === 0) {
@@ -92,7 +123,7 @@ router.delete("/:id", async (req, res) => {
 	res.json({ message: "User deleted successfully" });
 });
 
-// Generate API key for a user
+// Generate API key for a user (with hashing)
 router.post("/:id/api-key", async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -100,9 +131,12 @@ router.post("/:id/api-key", async (req, res) => {
 		// Generate a secure API key
 		const apiKey = crypto.randomBytes(32).toString("hex");
 
+		// Hash the API key before storing
+		const hashedApiKey = await hashApiKey(apiKey);
+
 		const { rows } = await db.query(
-			"UPDATE users SET api_key = $1 WHERE user_id = $2 RETURNING user_id, email, api_key",
-			[apiKey, id]
+			"UPDATE users SET api_key_hash = $1 WHERE user_id = $2 RETURNING user_id, email",
+			[hashedApiKey, id]
 		);
 
 		if (rows.length === 0) {
@@ -111,7 +145,7 @@ router.post("/:id/api-key", async (req, res) => {
 
 		res.json({
 			message: "API key generated successfully",
-			apiKey: rows[0].api_key,
+			apiKey: apiKey, // Return the plain key only once
 		});
 	} catch (error) {
 		next(error);
@@ -124,7 +158,7 @@ router.delete("/:id/api-key", async (req, res) => {
 		const { id } = req.params;
 
 		const { rows } = await db.query(
-			"UPDATE users SET api_key = NULL WHERE user_id = $1 RETURNING user_id",
+			"UPDATE users SET api_key_hash = NULL WHERE user_id = $1 RETURNING user_id",
 			[id]
 		);
 
@@ -144,7 +178,7 @@ router.get("/:id/api-key", async (req, res) => {
 		const { id } = req.params;
 
 		const { rows } = await db.query(
-			"SELECT user_id, email, CASE WHEN api_key IS NOT NULL THEN true ELSE false END as has_api_key FROM users WHERE user_id = $1",
+			"SELECT user_id, email, CASE WHEN api_key_hash IS NOT NULL THEN true ELSE false END as has_api_key FROM users WHERE user_id = $1",
 			[id]
 		);
 
