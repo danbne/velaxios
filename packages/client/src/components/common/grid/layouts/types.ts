@@ -52,8 +52,8 @@ export interface UseLayoutManagerProps {
  * Interface for layout change callback
  */
 export interface LayoutChangeCallback {
-	/** The layout data to apply to the grid */
-	layoutData: unknown;
+	/** The layout ID to load and apply to the grid */
+	layoutId: string;
 }
 
 /**

@@ -112,11 +112,16 @@ const BaseGrid = <T,>({
 		rowData,
 		setRowData,
 		colDefs,
-		gridApi,
+		gridApi: gridApi || undefined,
 	});
 
 	// Layout management
-	const { handleLayoutChange, handleLayoutSave } = useLayoutManager({
+	const { 
+		currentLayout,
+		handleLayoutChange, 
+		handleLayoutSave,
+		restoreDefaultLayout
+	} = useLayoutManager({
 		gridId,
 		gridApi,
 	});
@@ -139,15 +144,28 @@ const BaseGrid = <T,>({
 		fetchData,
 		showError,
 		setIsLoading,
-		gridApi,
+		gridApi: gridApi || undefined,
 	});
 
-	// Grid configuration
+	// Grid configuration with type-adapted layout handlers
 	const gridConfig = useGridConfiguration({
 		sideBarEnabled,
 		gridId,
-		handleLayoutChange,
-		handleLayoutSave,
+		handleLayoutChange: (layoutData: { [key: string]: unknown }) => {
+			// Extract layoutId from the layout data
+			const layoutId = layoutData.layoutId as string;
+			if (layoutId) {
+				handleLayoutChange({ layoutId });
+			}
+		},
+		handleLayoutSave: (params: { layoutData: { [key: string]: unknown }; layoutName?: string }) => {
+			// Extract layoutId from the params
+			const layoutId = params.layoutData.layoutId as string;
+			if (layoutId) {
+				return handleLayoutSave({ layoutId });
+			}
+			return Promise.resolve();
+		},
 		defaultColDef,
 	});
 
@@ -160,7 +178,7 @@ const BaseGrid = <T,>({
 	return (
 		<GridRenderer
 			shouldShowGrid={shouldShowGrid}
-			errorPopup={errorPopup}
+			errorPopup={typeof errorPopup === 'string' ? errorPopup : null}
 			showDialog={showDialog}
 			flashRed={flashRed}
 			clearError={clearError}
@@ -171,7 +189,7 @@ const BaseGrid = <T,>({
 			handleSave={handleSave}
 			handleRefreshWithWarning={handleRefreshWithWarning}
 			hasUnsavedChanges={hasUnsavedChanges}
-			gridApi={gridApi}
+			gridApi={gridApi || undefined}
 			gridConfig={gridConfig}
 			rowData={rowData}
 			colDefs={colDefs}
@@ -179,9 +197,17 @@ const BaseGrid = <T,>({
 			handleCellValueChanged={handleCellValueChanged}
 			handleCellEditingStopped={handleCellEditingStopped}
 			getRowId={getRowId}
-			getContextMenuItems={getContextMenuItems}
+			getContextMenuItems={getContextMenuItems as any}
 			getRowClass={getRowClass}
-			savedState={savedState}
+			savedState={savedState || {}}
+			gridId={gridId}
+			onLayoutChange={handleLayoutChange}
+			onLayoutSave={handleLayoutSave}
+			currentLayoutId={currentLayout?.layout_id}
+			currentLayoutName={currentLayout?.layout_name}
+			onRestoreDefault={async () => {
+				await restoreDefaultLayout();
+			}}
 		/>
 	);
 };

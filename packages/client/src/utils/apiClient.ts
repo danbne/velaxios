@@ -47,6 +47,18 @@ api.interceptors.request.use(
 		if (token && config.headers) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
+		
+		// Debug logging for layout requests
+		if (config.url?.includes('grid-layouts')) {
+			console.log("API Request:", {
+				url: config.url,
+				method: config.method,
+				hasToken: !!token,
+				tokenLength: token?.length,
+				data: config.data,
+			});
+		}
+		
 		return config;
 	},
 	(error) => {

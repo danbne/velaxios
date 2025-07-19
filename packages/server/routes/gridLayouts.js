@@ -49,10 +49,22 @@ router.post("/:gridId", async (req, res) => {
 	try {
 		const { gridId } = req.params;
 		const { layoutName, layoutData, isDefault = false } = req.body;
-		const userId = req.user.userId;
+		const userId = req.user?.userId;
+
+		console.log("Creating layout:", {
+			gridId,
+			layoutName,
+			hasLayoutData: !!layoutData,
+			userId,
+			user: req.user,
+		});
 
 		// Validate required fields
 		if (!layoutName || !layoutData) {
+			console.log("Validation failed:", {
+				layoutName,
+				hasLayoutData: !!layoutData,
+			});
 			return res
 				.status(400)
 				.json({ error: "Layout name and data are required" });

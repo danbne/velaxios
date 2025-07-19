@@ -200,23 +200,23 @@ export const useLayoutManager = ({
 	}, [gridId, gridApi, loadLayoutMutation]);
 
 	/**
-	 * Handles layout changes by applying the new layout state to the grid
+	 * Handles layout changes by loading and applying the selected layout to the grid
 	 *
-	 * This function is called when a user selects a different layout from the sidebar.
-	 * It takes the layout data and applies it to the current grid state using AG Grid's setState method.
+	 * This function is called when a user selects a different layout from the toolbar.
+	 * It loads the layout data and applies it to the current grid state using AG Grid's setState method.
 	 *
-	 * @param layoutData - The layout state object containing grid configuration
+	 * @param layoutData - Object containing the layout ID to load
 	 */
 	const handleLayoutChange = useCallback(
-		(layoutData: unknown) => {
-			if (
-				layoutData &&
-				Object.keys(layoutData as Record<string, unknown>).length > 0
-			) {
-				typedGridApi?.setState(layoutData as Record<string, unknown>);
+		async (layoutData: { layoutId: string }) => {
+			try {
+				const layout = await loadLayout(layoutData.layoutId);
+				setCurrentLayout(layout);
+			} catch (error) {
+				console.error("Error loading layout:", error);
 			}
 		},
-		[typedGridApi]
+		[loadLayout]
 	);
 
 	/**
@@ -239,6 +239,25 @@ export const useLayoutManager = ({
 		[saveLayout]
 	);
 
+	/**
+	 * Restores the default layout
+	 *
+	 * This function loads the default layout and applies it to the grid.
+	 * It's used when the user wants to reset to the default view.
+	 *
+	 * @returns Promise resolving to the default layout data
+	 */
+	const restoreDefaultLayout = useCallback(async (): Promise<LayoutWithData> => {
+		try {
+			const layout = await ensureDefaultLayout();
+			setCurrentLayout(layout);
+			return layout;
+		} catch (error) {
+			console.error("Error restoring default layout:", error);
+			throw error;
+		}
+	}, [ensureDefaultLayout]);
+
 	return {
 		currentLayout,
 		isLoading: loadLayoutMutation.isPending || saveLayoutMutation.isPending,
@@ -247,5 +266,6 @@ export const useLayoutManager = ({
 		ensureDefaultLayout,
 		handleLayoutChange,
 		handleLayoutSave,
+		restoreDefaultLayout,
 	};
 };

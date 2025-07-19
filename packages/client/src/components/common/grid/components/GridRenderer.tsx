@@ -1,5 +1,6 @@
 import { AgGridReact } from "ag-grid-react";
 import GridToolbar from "./GridToolbar";
+import GridStatusBar from "./GridStatusBar";
 import ErrorDialog from "./ErrorDialog";
 import { getGridComponents } from "../utils/gridComponentRegistration";
 import type {
@@ -21,10 +22,13 @@ import {
 	TextEditorModule,
 	LicenseManager,
 } from "ag-grid-enterprise";
+import { GridStateModule } from "ag-grid-community";
+
 ModuleRegistry.registerModules([
 	SetFilterModule,
 	TextFilterModule,
 	TextEditorModule,
+	GridStateModule,
 ]);
 
 /**
@@ -60,6 +64,13 @@ interface GridRendererProps<T> {
 	getContextMenuItems: (params: GetContextMenuItemsParams) => string[];
 	getRowClass: (params: RowClassParams) => string | string[];
 	savedState: Record<string, unknown>;
+	/** Layout management props */
+	gridId?: string;
+	onLayoutChange?: (layoutData: { layoutId: string }) => void;
+	onLayoutSave?: (params: { layoutId: string }) => Promise<void>;
+	currentLayoutId?: string;
+	currentLayoutName?: string;
+	onRestoreDefault?: () => Promise<void>;
 }
 
 /**
@@ -93,6 +104,12 @@ const GridRenderer = <T,>({
 	getContextMenuItems,
 	getRowClass,
 	savedState,
+	gridId,
+	onLayoutChange,
+	onLayoutSave,
+	currentLayoutId,
+	currentLayoutName,
+	onRestoreDefault,
 }: GridRendererProps<T>) => {
 	// Verify license is set (for debugging)
 	LicenseManager.setLicenseKey(
@@ -127,10 +144,16 @@ const GridRenderer = <T,>({
 							onRefresh={handleRefreshWithWarning}
 							hasUnsavedChanges={hasUnsavedChanges}
 							gridApi={gridApi}
+							gridId={gridId}
+							onLayoutChange={onLayoutChange}
+							onLayoutSave={onLayoutSave}
+							currentLayoutId={currentLayoutId}
+							currentLayoutName={currentLayoutName}
+							onRestoreDefault={onRestoreDefault}
 						/>
 
 						{/* Main AG Grid component with all configurations */}
-						<div style={{ height: "calc(100% - 60px)" }}>
+						<div style={{ height: "calc(100% - 120px)" }}>
 							<AgGridReact
 								// Row styling rules
 								rowClassRules={{
@@ -170,6 +193,15 @@ const GridRenderer = <T,>({
 								components={getGridComponents()}
 							/>
 						</div>
+
+						{/* Status bar with current view and save functionality */}
+						<GridStatusBar
+							gridId={gridId}
+							currentLayoutId={currentLayoutId}
+							currentLayoutName={currentLayoutName}
+							onLayoutChange={onLayoutChange}
+							onLayoutSave={onLayoutSave}
+						/>
 					</>
 				)}
 			</div>

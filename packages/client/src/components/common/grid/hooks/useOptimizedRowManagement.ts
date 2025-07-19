@@ -712,6 +712,69 @@ export const useOptimizedRowManagement = <T>({
 		}
 	}, [gridApi]);
 
+	/**
+	 * Gets the unique row ID for AG Grid
+	 *
+	 * This function provides a unique identifier for each row in the grid.
+	 * It uses the primary key field to generate consistent IDs.
+	 *
+	 * @param params - AG Grid row ID parameters
+	 * @returns Unique row ID string
+	 */
+	const getRowId = useCallback(
+		(params: { data: RowWithMetadata }) => {
+			if (!params.data) return "";
+			const value = params.data[primaryKey];
+			return typeof value === "string" ? value : String(value);
+		},
+		[primaryKey]
+	);
+
+	/**
+	 * Gets context menu items for the grid
+	 *
+	 * This function provides context menu options when right-clicking
+	 * on grid cells or rows.
+	 *
+	 * @param params - AG Grid context menu parameters
+	 * @returns Array of context menu item names
+	 */
+	const getContextMenuItems = useCallback(
+		(params: { data?: RowWithMetadata }) => {
+			const items = ["copy", "copyWithHeaders", "paste"];
+			
+			// Add row-specific actions if we have row data
+			if (params.data) {
+				items.push("separator", "deleteRow");
+			}
+			
+			return items;
+		},
+		[]
+	);
+
+	/**
+	 * Handles cell editing stopped events
+	 *
+	 * This function is called when cell editing is finished.
+	 * It can be used for validation or additional processing.
+	 *
+	 * @param event - AG Grid cell editing stopped event
+	 */
+	const handleCellEditingStopped = useCallback(
+		(event: { data: RowWithMetadata; colDef: ColDef<T> }) => {
+			// Additional validation or processing can be added here
+			// For now, we just ensure the change is tracked
+			if (event.data && hasRowMetadata(event.data)) {
+				if (!event.data.__isNewRow) {
+					event.data.__isDirty = true;
+				}
+				setChangeCounter((prev) => prev + 1);
+			}
+		},
+		[setChangeCounter]
+	);
+
 	return {
 		addNewRow,
 		saveChanges,
@@ -724,6 +787,9 @@ export const useOptimizedRowManagement = <T>({
 		getRowClass,
 		// getCellClass,
 		handleCellValueChanged,
+		handleCellEditingStopped,
+		getRowId,
+		getContextMenuItems,
 		getCurrentRowData,
 	};
 };

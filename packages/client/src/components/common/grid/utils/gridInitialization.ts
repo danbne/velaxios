@@ -7,6 +7,7 @@ import {
 	ColumnMenuModule,
 	ContextMenuModule,
 } from "ag-grid-enterprise";
+import { GridStateModule } from "ag-grid-community";
 import { registerGridComponents } from "./gridComponentRegistration";
 
 /**
@@ -23,6 +24,7 @@ export function initializeAGGrid() {
 		ColumnMenuModule,
 		ContextMenuModule,
 		CellSelectionModule,
+		GridStateModule,
 		...(process.env.NODE_ENV !== "production" ? [ValidationModule] : []),
 	]);
 

@@ -4,6 +4,11 @@ interface LayoutData {
 	[key: string]: unknown;
 }
 
+interface LayoutSaveParams {
+	layoutData: LayoutData;
+	layoutName?: string;
+}
+
 /**
  * Creates the status bar configuration for the grid
  *
@@ -20,7 +25,7 @@ interface LayoutData {
  */
 export const createStatusBar = (
 	gridId?: string,
-	onLayoutSave?: (layoutData: LayoutData) => void
+	onLayoutSave?: (params: LayoutSaveParams) => Promise<void>
 ) => {
 	return {
 		statusPanels: [
@@ -67,7 +72,7 @@ export const createSideBar = (
 	sideBarEnabled: boolean,
 	gridId?: string,
 	onLayoutChange?: (layoutData: LayoutData) => void,
-	onLayoutSave?: (layoutData: LayoutData) => void
+	onLayoutSave?: (params: LayoutSaveParams) => Promise<void>
 ) => {
 	if (sideBarEnabled) {
 		return {
@@ -180,7 +185,7 @@ export const createGridConfiguration = <T,>({
 	sideBarEnabled: boolean;
 	gridId: string;
 	handleLayoutChange: (layoutData: LayoutData) => void;
-	handleLayoutSave: (layoutData: LayoutData) => void;
+	handleLayoutSave: (params: LayoutSaveParams) => Promise<void>;
 	defaultColDef?: Partial<ColDef<T>>;
 }) => {
 	return {

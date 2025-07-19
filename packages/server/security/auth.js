@@ -201,11 +201,18 @@ const verifyApiKeyAuth = async (req, res, next) => {
 const verifyJWT = (req, res, next) => {
 	const token = req.headers.authorization?.split(" ")[1];
 	if (!token) {
+		console.log("No token provided in request");
 		return res.status(401).json({ error: "No token provided" });
 	}
 
+	console.log("Verifying JWT token:", {
+		tokenLength: token.length,
+		tokenStart: token.substring(0, 20) + "...",
+	});
+
 	// Check if token is blacklisted
 	if (isTokenBlacklisted(token)) {
+		console.log("Token is blacklisted");
 		return res.status(401).json({ error: "Token has been revoked" });
 	}
 
@@ -213,15 +220,28 @@ const verifyJWT = (req, res, next) => {
 		// Try current secret first
 		const decoded = jwt.verify(token, currentJWTSecret);
 		req.user = decoded;
+		console.log("JWT verification successful:", {
+			userId: decoded.userId,
+			email: decoded.email,
+		});
 		next();
 	} catch (err) {
+		console.log("JWT verification failed with current secret:", err.message);
 		// If current secret fails, try previous secret (for graceful rotation)
 		if (previousJWTSecret && previousJWTSecret !== currentJWTSecret) {
 			try {
 				const decoded = jwt.verify(token, previousJWTSecret);
 				req.user = decoded;
+				console.log("JWT verification successful with previous secret:", {
+					userId: decoded.userId,
+					email: decoded.email,
+				});
 				next();
 			} catch (prevErr) {
+				console.log(
+					"JWT verification failed with previous secret:",
+					prevErr.message
+				);
 				res.status(401).json({ error: "Invalid token" });
 			}
 		} else {
@@ -232,6 +252,13 @@ const verifyJWT = (req, res, next) => {
 
 // Combined authentication middleware that accepts both JWT and API key
 const authenticate = async (req, res, next) => {
+	console.log("Authentication middleware:", {
+		path: req.path,
+		method: req.method,
+		hasApiKey: !!(req.headers["x-api-key"] || req.headers["api-key"]),
+		hasAuthHeader: !!req.headers.authorization,
+	});
+
 	// Check for API key first
 	const apiKey = req.headers["x-api-key"] || req.headers["api-key"];
 	if (apiKey) {
