@@ -1,5 +1,4 @@
 import React from "react";
-import { componentThemes, mergeStyles } from "../../styles/theme";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: "primary" | "secondary" | "accent";
@@ -7,16 +6,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /**
- * Button - Reusable button component with theme integration
+ * Button - Reusable button component
  *
- * This component provides consistent button styling across the application
- * using the centralized theme system. It supports multiple variants and sizes
- * while maintaining accessibility and proper TypeScript support.
+ * This component provides consistent button styling across the application.
+ * It supports multiple variants and sizes while maintaining accessibility
+ * and proper TypeScript support.
  *
  * Features:
  * - Multiple variants (primary, secondary, accent)
  * - Multiple sizes (sm, md, lg)
- * - Theme-based styling
+ * - Clean styling
  * - Proper accessibility attributes
  * - TypeScript support with HTML button props
  *
@@ -35,28 +34,53 @@ const Button: React.FC<ButtonProps> = ({
 	style,
 	...props
 }) => {
-	// Get base button styles
-	const baseStyles = componentThemes.button.base;
+	// Base button styles
+	const baseStyles: React.CSSProperties = {
+		border: "none",
+		borderRadius: "4px",
+		cursor: "pointer",
+		fontWeight: "500",
+		transition: "all 0.2s",
+		display: "inline-flex",
+		alignItems: "center",
+		justifyContent: "center",
+		textDecoration: "none",
+		outline: "none",
+	};
 
-	// Get variant-specific styles
-	const variantStyles =
-		componentThemes.button[variant as keyof typeof componentThemes.button] ||
-		{};
+	// Variant-specific styles
+	const variantStyles: Record<string, React.CSSProperties> = {
+		primary: {
+			backgroundColor: "#0078d4",
+			color: "white",
+			border: "1px solid #0078d4",
+		},
+		secondary: {
+			backgroundColor: "#6b7280",
+			color: "white",
+			border: "1px solid #6b7280",
+		},
+		accent: {
+			backgroundColor: "#10b981",
+			color: "white",
+			border: "1px solid #10b981",
+		},
+	};
 
-	// Get size-specific styles
-	const sizeStyles = {
+	// Size-specific styles
+	const sizeStyles: Record<string, React.CSSProperties> = {
 		sm: { padding: "4px 8px", fontSize: "0.875rem" },
 		md: { padding: "8px 16px", fontSize: "1rem" },
 		lg: { padding: "12px 24px", fontSize: "1.125rem" },
-	}[size];
+	};
 
 	// Merge all styles
-	const buttonStyles = mergeStyles(
-		baseStyles,
-		variantStyles,
-		sizeStyles,
-		style || {}
-	);
+	const buttonStyles: React.CSSProperties = {
+		...baseStyles,
+		...variantStyles[variant],
+		...sizeStyles[size],
+		...style,
+	};
 
 	return (
 		<button className={className} style={buttonStyles} {...props}>

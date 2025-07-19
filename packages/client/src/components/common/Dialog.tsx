@@ -1,5 +1,4 @@
 import React from "react";
-import { componentThemes, mergeStyles } from "../../styles/theme";
 
 interface DialogProps {
 	isOpen: boolean;
@@ -15,11 +14,10 @@ interface DialogProps {
  * Dialog - Reusable modal dialog component
  *
  * This component provides a consistent modal dialog experience across the application.
- * It uses the centralized theme system for styling and includes proper accessibility
- * features like focus management and ARIA attributes.
+ * It includes proper accessibility features like focus management and ARIA attributes.
  *
  * Features:
- * - Theme-based styling
+ * - Clean styling
  * - Proper accessibility attributes
  * - Focus management
  * - Customizable header and footer
@@ -58,14 +56,52 @@ const Dialog: React.FC<DialogProps> = ({
 		}
 	};
 
-	const containerStyles = mergeStyles(
-		componentThemes.dialog.container,
-		style || {}
-	);
+	const overlayStyles: React.CSSProperties = {
+		position: "fixed",
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: "rgba(0, 0, 0, 0.5)",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 1000,
+	};
+
+	const containerStyles: React.CSSProperties = {
+		backgroundColor: "white",
+		borderRadius: "8px",
+		boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+		maxWidth: "500px",
+		width: "90%",
+		maxHeight: "80vh",
+		overflow: "auto",
+		...style,
+	};
+
+	const headerStyles: React.CSSProperties = {
+		padding: "16px 20px",
+		borderBottom: "1px solid #e5e7eb",
+		fontWeight: "600",
+		fontSize: "18px",
+	};
+
+	const contentStyles: React.CSSProperties = {
+		padding: "20px",
+	};
+
+	const footerStyles: React.CSSProperties = {
+		padding: "16px 20px",
+		borderTop: "1px solid #e5e7eb",
+		display: "flex",
+		justifyContent: "flex-end",
+		gap: "8px",
+	};
 
 	return (
 		<div
-			style={componentThemes.dialog.overlay}
+			style={overlayStyles}
 			onClick={handleBackdropClick}
 			onKeyDown={handleKeyDown}
 			role="dialog"
@@ -76,7 +112,7 @@ const Dialog: React.FC<DialogProps> = ({
 			<div style={containerStyles}>
 				{/* Header */}
 				{title && (
-					<div style={componentThemes.dialog.header}>
+					<div style={headerStyles}>
 						<h2 id="dialog-title" style={{ margin: 0 }}>
 							{title}
 						</h2>
@@ -84,10 +120,10 @@ const Dialog: React.FC<DialogProps> = ({
 				)}
 
 				{/* Content */}
-				<div style={componentThemes.dialog.content}>{children}</div>
+				<div style={contentStyles}>{children}</div>
 
 				{/* Footer */}
-				{footer && <div style={componentThemes.dialog.footer}>{footer}</div>}
+				{footer && <div style={footerStyles}>{footer}</div>}
 			</div>
 		</div>
 	);
@@ -98,20 +134,51 @@ const Dialog: React.FC<DialogProps> = ({
  */
 export const DialogHeader: React.FC<{ children: React.ReactNode }> = ({
 	children,
-}) => <div style={componentThemes.dialog.header}>{children}</div>;
+}) => (
+	<div
+		style={{
+			padding: "16px 20px",
+			borderBottom: "1px solid #e5e7eb",
+			fontWeight: "600",
+			fontSize: "18px",
+		}}
+	>
+		{children}
+	</div>
+);
 
 /**
  * DialogContent - Component for dialog content
  */
 export const DialogContent: React.FC<{ children: React.ReactNode }> = ({
 	children,
-}) => <div style={componentThemes.dialog.content}>{children}</div>;
+}) => (
+	<div
+		style={{
+			padding: "20px",
+		}}
+	>
+		{children}
+	</div>
+);
 
 /**
  * DialogFooter - Component for dialog footers
  */
 export const DialogFooter: React.FC<{ children: React.ReactNode }> = ({
 	children,
-}) => <div style={componentThemes.dialog.footer}>{children}</div>;
+}) => (
+	<div
+		style={{
+			padding: "16px 20px",
+			borderTop: "1px solid #e5e7eb",
+			display: "flex",
+			justifyContent: "flex-end",
+			gap: "8px",
+		}}
+	>
+		{children}
+	</div>
+);
 
 export default Dialog;

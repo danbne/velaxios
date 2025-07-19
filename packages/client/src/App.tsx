@@ -8,13 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from "@components/auth/Login";
 import AuthCallback from "@components/auth/AuthCallback";
-import Layout from "@components/layout/Layout";
-import ProjectsPage from "@pages/ProjectsPage";
-
-import UsersPage from "@pages/UsersPage";
-import AnalyticsPage from "@pages/AnalyticsPage";
-import SettingsPage from "@pages/SettingsPage";
-import ProjectDashboardPage from "@pages/ProjectDashboardPage";
+import ProjectGrid from "@components/project/ProjectGrid";
 import { jwtDecode } from "jwt-decode";
 import {
 	initializeTokenManager,
@@ -47,7 +41,6 @@ const queryClient = new QueryClient({
 
 function App() {
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
-	const [userId, setUserId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	const checkAuth = useCallback(() => {
@@ -61,20 +54,16 @@ function App() {
 
 				if (isTokenValid) {
 					setIsAuthenticated(true);
-					setUserId(decoded.userId);
 				} else {
 					localStorage.removeItem("token");
 					setIsAuthenticated(false);
-					setUserId(null);
 				}
 			} catch {
 				localStorage.removeItem("token");
 				setIsAuthenticated(false);
-				setUserId(null);
 			}
 		} else {
 			setIsAuthenticated(false);
-			setUserId(null);
 		}
 		setLoading(false);
 	}, []);
@@ -123,8 +112,15 @@ function App() {
 	// Show a loading indicator while checking authentication
 	if (loading) {
 		return (
-			<div className="flex justify-center items-center h-screen">
-				<div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					height: "100vh",
+				}}
+			>
+				<div className="loading-spinner"></div>
 			</div>
 		);
 	}
@@ -152,27 +148,18 @@ function App() {
 						}
 					/>
 					<Route
-						path="/*"
+						path="/projects"
 						element={
-							isAuthenticated ? <Layout /> : <Navigate to="/login" replace />
+							isAuthenticated ? (
+								<div style={{ height: "100vh", padding: "20px" }}>
+									<ProjectGrid />
+								</div>
+							) : (
+								<Navigate to="/login" replace />
+							)
 						}
-					>
-						<Route
-							path="projects"
-							element={userId ? <ProjectsPage /> : <Navigate to="/login" />}
-						/>
-						<Route
-							path="projects/:projectId"
-							element={
-								userId ? <ProjectDashboardPage /> : <Navigate to="/login" />
-							}
-						/>
-
-						<Route path="users" element={<UsersPage />} />
-						<Route path="analytics" element={<AnalyticsPage />} />
-						<Route path="settings" element={<SettingsPage />} />
-						<Route path="*" element={<Navigate to="/projects" replace />} />
-					</Route>
+					/>
+					<Route path="*" element={<Navigate to="/login" replace />} />
 				</Routes>
 			</Router>
 		</QueryClientProvider>

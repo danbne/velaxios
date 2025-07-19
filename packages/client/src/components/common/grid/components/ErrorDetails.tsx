@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { componentThemes } from "../../../../styles/theme";
 
 interface ErrorDetailsProps {
-	details: Record<string, any>;
+	details: Record<string, unknown>;
 }
 
 /**
@@ -38,7 +37,16 @@ const ErrorDetails: React.FC<ErrorDetailsProps> = ({ details }) => {
 	return (
 		<div style={{ marginTop: "12px" }}>
 			<button
-				style={componentThemes.errorDialog.detailsButton}
+				style={{
+					backgroundColor: "transparent",
+					border: "1px solid #d1d5db",
+					borderRadius: "4px",
+					padding: "4px 8px",
+					fontSize: "0.875rem",
+					cursor: "pointer",
+					color: "#6b7280",
+					marginBottom: "8px",
+				}}
 				onClick={handleToggle}
 				aria-expanded={isOpen}
 				aria-controls="error-details"
@@ -49,7 +57,15 @@ const ErrorDetails: React.FC<ErrorDetailsProps> = ({ details }) => {
 			{isOpen && (
 				<div
 					id="error-details"
-					style={componentThemes.errorDialog.detailsContainer}
+					style={{
+						backgroundColor: "#f9fafb",
+						border: "1px solid #e5e7eb",
+						borderRadius: "4px",
+						padding: "12px",
+						marginTop: "8px",
+						fontSize: "0.875rem",
+						fontFamily: "monospace",
+					}}
 					role="region"
 					aria-label="Error details"
 				>
@@ -57,7 +73,16 @@ const ErrorDetails: React.FC<ErrorDetailsProps> = ({ details }) => {
 						{formattedDetails}
 					</pre>
 					<button
-						style={componentThemes.errorDialog.copyButton}
+						style={{
+							backgroundColor: "#6b7280",
+							color: "white",
+							border: "none",
+							borderRadius: "4px",
+							padding: "4px 8px",
+							fontSize: "0.875rem",
+							cursor: "pointer",
+							marginTop: "8px",
+						}}
 						onClick={handleCopyDetails}
 						title="Copy error details to clipboard"
 					>

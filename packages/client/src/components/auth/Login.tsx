@@ -27,10 +27,34 @@ const Login: React.FC = () => {
 	};
 
 	return (
-		<div className="flex items-center justify-center h-screen">
+		<div
+			style={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				height: "100vh",
+				backgroundColor: "#f5f5f5",
+			}}
+		>
 			<button
 				onClick={handleMicrosoftLogin}
-				className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+				style={{
+					backgroundColor: "#0078d4",
+					color: "white",
+					padding: "12px 24px",
+					borderRadius: "6px",
+					border: "none",
+					fontSize: "16px",
+					fontWeight: "500",
+					cursor: "pointer",
+					transition: "background-color 0.2s",
+				}}
+				onMouseOver={(e) => {
+					e.currentTarget.style.backgroundColor = "#106ebe";
+				}}
+				onMouseOut={(e) => {
+					e.currentTarget.style.backgroundColor = "#0078d4";
+				}}
 			>
 				Login with Microsoft
 			</button>

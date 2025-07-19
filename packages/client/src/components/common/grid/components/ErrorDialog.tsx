@@ -1,11 +1,10 @@
 import React from "react";
-import { componentThemes, mergeStyles } from "../../../../styles/theme";
 import Dialog from "../../Dialog";
 import ErrorDetails from "./ErrorDetails";
 import Button from "../../Button";
 
 interface ErrorDialogProps {
-	error: string | { message: string; details?: Record<string, any> } | null;
+	error: string | { message: string; details?: Record<string, unknown> } | null;
 	showDialog: boolean;
 	flashRed: boolean;
 	onClose: () => void;
@@ -15,11 +14,10 @@ interface ErrorDialogProps {
  * ErrorDialog - Simplified error dialog component
  *
  * This component displays user-friendly error messages with optional details.
- * It uses the centralized theme system and Dialog component for consistent styling
- * and includes accessibility features for better user experience.
+ * It includes accessibility features for better user experience.
  *
  * Features:
- * - Clean, consistent styling using theme system
+ * - Clean, consistent styling
  * - Collapsible error details via ErrorDetails component
  * - Proper accessibility attributes
  * - Flash red animation for critical errors
@@ -46,16 +44,26 @@ const ErrorDialog: React.FC<ErrorDialogProps> = ({
 
 	// Determine container styles based on flash state
 	const containerStyles = flashRed
-		? mergeStyles(
-				componentThemes.errorDialog.container,
-				componentThemes.errorDialog.flashRed
-		  )
-		: componentThemes.errorDialog.container;
+		? {
+				backgroundColor: "#fee2e2",
+				border: "1px solid #fecaca",
+				borderRadius: "8px",
+				padding: "16px",
+				margin: "8px 0",
+				animation: "flashRed 0.5s ease-in-out",
+		  }
+		: {
+				backgroundColor: "#fef3c7",
+				border: "1px solid #fde68a",
+				borderRadius: "8px",
+				padding: "16px",
+				margin: "8px 0",
+		  };
 
 	return (
 		<Dialog isOpen={showDialog} onClose={onClose} style={containerStyles}>
 			{/* Main error message */}
-			<div style={{ color: componentThemes.errorDialog.container.color }}>
+			<div style={{ color: "#991b1b", marginBottom: "12px" }}>
 				{errorMessage}
 			</div>
 
@@ -67,7 +75,15 @@ const ErrorDialog: React.FC<ErrorDialogProps> = ({
 				variant="secondary"
 				size="sm"
 				onClick={onClose}
-				style={componentThemes.errorDialog.closeButton}
+				style={{
+					marginTop: "12px",
+					backgroundColor: "#6b7280",
+					color: "white",
+					border: "none",
+					borderRadius: "4px",
+					padding: "6px 12px",
+					cursor: "pointer",
+				}}
 			>
 				Close
 			</Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useCallback } from "react";
+import { useMemo } from "react";
 import { API_ENDPOINTS } from "../../config/api";
 import { createDateColumn } from "../../utils/dateFormatters";
 import BaseGrid, { type ColDef } from "../common/grid/BaseGrid";
@@ -41,12 +41,14 @@ const ProjectGrid = () => {
 	);
 
 	return (
-		<BaseGrid<Project>
-			gridId="project-grid"
-			endpoint={API_ENDPOINTS.PROJECTS}
-			colDefs={colDefs}
-			primaryKey="project_id"
-		/>
+		<div style={{ height: "100%", width: "100%" }}>
+			<BaseGrid<Project>
+				gridId="project-grid"
+				endpoint={API_ENDPOINTS.PROJECTS}
+				colDefs={colDefs}
+				primaryKey="project_id"
+			/>
+		</div>
 	);
 };
 
