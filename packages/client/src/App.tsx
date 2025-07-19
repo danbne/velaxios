@@ -51,51 +51,28 @@ function App() {
 	const [loading, setLoading] = useState(true);
 
 	const checkAuth = useCallback(() => {
-		console.log("App: Checking authentication...");
 		const token = localStorage.getItem("token");
-		console.log("App: Token in localStorage:", token ? "Present" : "Not found");
 
 		if (token) {
 			try {
-				console.log("App: Attempting to decode token...");
 				const decoded: DecodedToken = jwtDecode(token);
-				console.log("App: Token decoded successfully:", decoded);
-				console.log("App: Token structure:", {
-					userId: decoded.userId,
-					email: decoded.email,
-					exp: decoded.exp,
-					iat: decoded.iat,
-					iss: decoded.iss,
-				});
-
-				const currentTime = Date.now();
-				const tokenExpTime = decoded.exp * 1000;
-				console.log("App: Current time:", currentTime);
-				console.log("App: Token expiration time:", tokenExpTime);
-				console.log("App: Time difference (ms):", tokenExpTime - currentTime);
 
 				const isTokenValid = decoded.exp * 1000 > Date.now();
-				console.log("App: Token valid:", isTokenValid);
 
 				if (isTokenValid) {
-					console.log("App: Setting authenticated to true");
 					setIsAuthenticated(true);
 					setUserId(decoded.userId);
 				} else {
-					console.log("App: Token expired, removing from localStorage");
 					localStorage.removeItem("token");
 					setIsAuthenticated(false);
 					setUserId(null);
 				}
-			} catch (error) {
-				console.log("App: Error decoding token:", error);
-				console.log("App: Token content:", token);
+			} catch {
 				localStorage.removeItem("token");
 				setIsAuthenticated(false);
 				setUserId(null);
 			}
 		} else {
-			console.log("App: No token found, setting authenticated to false");
 			setIsAuthenticated(false);
 			setUserId(null);
 		}
@@ -110,14 +87,12 @@ function App() {
 
 		// Listen for custom token stored event (same tab)
 		const handleTokenStored = () => {
-			console.log("App: Token stored event received, re-checking auth...");
 			checkAuth();
 		};
 
 		// Listen for localStorage changes (cross-tab)
 		const handleStorageChange = (e: StorageEvent) => {
 			if (e.key === "token") {
-				console.log("App: Token changed in localStorage, re-checking auth...");
 				checkAuth();
 			}
 		};

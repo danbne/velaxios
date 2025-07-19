@@ -20,13 +20,6 @@ const AuthCallback: React.FC = () => {
 			const success = searchParams.get("success");
 			const error = searchParams.get("error");
 
-			console.log("AuthCallback: URL parameters:", {
-				code: code ? "present" : "not present",
-				token: token ? "present" : "not present",
-				success,
-				error,
-			});
-
 			if (error) {
 				setError(`Authentication error: ${error}`);
 				setLoading(false);
@@ -35,9 +28,7 @@ const AuthCallback: React.FC = () => {
 
 			// If we have a token directly (from server redirect)
 			if (token && success === "true") {
-				console.log("AuthCallback: Received token from server redirect");
 				localStorage.setItem("token", token);
-				console.log("AuthCallback: Token stored, navigating immediately");
 
 				// Dispatch custom event to notify App component
 				window.dispatchEvent(new CustomEvent("tokenStored"));
@@ -72,9 +63,6 @@ const AuthCallback: React.FC = () => {
 				if (data.success && data.token) {
 					// Store the token
 					localStorage.setItem("token", data.token);
-					console.log(
-						"AuthCallback: Token stored via API, navigating immediately"
-					);
 
 					// Dispatch custom event to notify App component
 					window.dispatchEvent(new CustomEvent("tokenStored"));

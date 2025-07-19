@@ -254,21 +254,24 @@ export const componentThemes = {
 /**
  * Creates a CSS object with theme values
  */
-export const createThemeStyles = (theme: Record<string, any>) => {
+export const createThemeStyles = (theme: Record<string, unknown>) => {
 	return theme;
 };
 
 /**
  * Merges multiple style objects
  */
-export const mergeStyles = (...styles: Record<string, any>[]) => {
+export const mergeStyles = (...styles: Record<string, unknown>[]) => {
 	return Object.assign({}, ...styles);
 };
 
 /**
  * Creates responsive styles
  */
-export const responsive = (breakpoint: string, styles: Record<string, any>) => {
+export const responsive = (
+	breakpoint: string,
+	styles: Record<string, unknown>
+) => {
 	return {
 		[`@media (min-width: ${breakpoint})`]: styles,
 	};
