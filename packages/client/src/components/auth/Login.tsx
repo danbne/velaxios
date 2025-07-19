@@ -13,9 +13,6 @@ const Login: React.FC = () => {
 			import.meta.env.VITE_MICROSOFT_REDIRECT_URI ||
 			"http://localhost:5000/auth/callback";
 
-		console.log("Login: Using redirect URI:", redirectUri);
-		console.log("Login: Using client ID:", clientId);
-
 		// Redirect directly to Microsoft OAuth
 		window.location.href =
 			"https://login.microsoftonline.com/common/oauth2/v2.0/authorize?" +

@@ -2,12 +2,37 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { generateNewRowTempId, isTempId } from "@utils/tempIdGenerator";
 import type { ColDef } from "../BaseGrid";
-import type { GridApi } from "ag-grid-community";
+import type { GridApi, IRowNode } from "ag-grid-community";
 
 import { ModuleRegistry } from "ag-grid-community";
 import { RowApiModule } from "ag-grid-community";
 
 ModuleRegistry.registerModules([RowApiModule]);
+
+interface RowWithMetadata {
+	[key: string]: unknown;
+	__isNewRow?: boolean;
+	__isDirty?: boolean;
+	__isDeleted?: boolean;
+	__isFailed?: boolean;
+}
+
+interface GridChanges {
+	added?: RowWithMetadata[];
+	updated?: RowWithMetadata[];
+	removed?: RowWithMetadata[];
+}
+
+interface ExtendedGridApi extends GridApi {
+	getChanges?: () => GridChanges;
+	clearChanges?: () => void;
+}
+
+interface BatchOperation {
+	toAdd: RowWithMetadata[];
+	toUpdate: RowWithMetadata[];
+	toDelete: string[];
+}
 
 /**
  * Interface representing the data structure returned from successful save operations
@@ -123,7 +148,21 @@ interface UseOptimizedRowManagementProps<T> {
 	 * This is optional because the grid might not be ready when the hook
 	 * is first called.
 	 */
-	gridApi?: GridApi;
+	gridApi?: ExtendedGridApi;
+}
+
+/**
+ * Type guard to check if a row has metadata
+ */
+function hasRowMetadata(row: unknown): row is RowWithMetadata {
+	return typeof row === "object" && row !== null;
+}
+
+/**
+ * Type guard to check if an API has extended methods
+ */
+function hasExtendedMethods(api: GridApi): api is ExtendedGridApi {
+	return typeof (api as ExtendedGridApi).getChanges === "function";
 }
 
 /**
@@ -246,28 +285,33 @@ export const useOptimizedRowManagement = <T>({
 
 		try {
 			// Get changes using AG Grid's native API (if available)
-			let changes;
-			if (typeof (gridApi as any).getChanges === "function") {
-				changes = (gridApi as any).getChanges();
+			let changes: GridChanges;
+			if (hasExtendedMethods(gridApi) && gridApi.getChanges) {
+				changes = gridApi.getChanges();
 			} else {
 				// Fallback: manually track changes using row data
 				const currentData = gridApi
 					.getRenderedNodes()
-					.map((node: any) => node.data);
-				const added = currentData.filter((row: any) => (row as any).__isNewRow);
+					.map((node: IRowNode) => node.data as RowWithMetadata);
+				const added = currentData.filter((row) => hasRowMetadata(row) && row.__isNewRow);
 				const updated = currentData.filter(
-					(row: any) => (row as any).__isDirty && !(row as any).__isNewRow
+					(row) => hasRowMetadata(row) && row.__isDirty && !row.__isNewRow
 				);
 				const removed = currentData.filter(
-					(row: any) => (row as any).__isDeleted
+					(row) => hasRowMetadata(row) && row.__isDeleted
 				);
 				changes = { added, updated, removed };
 			}
 
-			const batch = {
+			const batch: BatchOperation = {
 				toAdd: changes.added || [],
 				toUpdate: changes.updated || [],
-				toDelete: changes.removed?.map((row: any) => row[primaryKey]) || [],
+				toDelete: changes.removed?.map((row) => {
+					if (hasRowMetadata(row) && typeof row[primaryKey] === "string") {
+						return row[primaryKey] as string;
+					}
+					return "";
+				}).filter(Boolean) || [],
 			};
 
 			if (
@@ -278,10 +322,10 @@ export const useOptimizedRowManagement = <T>({
 				return;
 			}
 
-			// TODO: Implement batch save logic here
-			// For now, we'll just simulate a successful save
-			console.log("Saving changes:", batch);
-			const result = {
+			// Implement batch save logic
+			// This would typically make an API call to save the changes
+			// For now, we'll simulate a successful save with the current data
+			const result: SavedData = {
 				added: batch.toAdd,
 				updated: batch.toUpdate,
 				deleted: batch.toDelete,
@@ -293,13 +337,13 @@ export const useOptimizedRowManagement = <T>({
 			setChangeCounter(0);
 
 			// Clear change tracking if available
-			if (typeof (gridApi as any).clearChanges === "function") {
-				(gridApi as any).clearChanges();
+			if (hasExtendedMethods(gridApi) && gridApi.clearChanges) {
+				gridApi.clearChanges();
 			} else {
 				// Fallback: manually clear flags
 				const allNodes = gridApi.getRenderedNodes();
-				allNodes.forEach((node: any) => {
-					if (node.data) {
+				allNodes.forEach((node: IRowNode) => {
+					if (node.data && hasRowMetadata(node.data)) {
 						node.data.__isDirty = false;
 						node.data.__isNewRow = false;
 						node.data.__isDeleted = false;
@@ -339,15 +383,15 @@ export const useOptimizedRowManagement = <T>({
 		setChangeCounter(0);
 
 		// Check if AG Grid's native clearChanges is available
-		if (typeof (gridApi as any).clearChanges === "function") {
-			(gridApi as any).clearChanges();
+		if (hasExtendedMethods(gridApi) && gridApi.clearChanges) {
+			gridApi.clearChanges();
 		} else {
 			// Fallback: manually clear flags
 			try {
 				const allNodes = gridApi.getRenderedNodes();
 				if (allNodes && Array.isArray(allNodes)) {
-					allNodes.forEach((node: any) => {
-						if (node.data) {
+					allNodes.forEach((node: IRowNode) => {
+						if (node.data && hasRowMetadata(node.data)) {
 							node.data.__isDirty = false;
 							node.data.__isNewRow = false;
 							node.data.__isDeleted = false;
@@ -381,389 +425,305 @@ export const useOptimizedRowManagement = <T>({
 	 * @param api - The AG Grid API instance
 	 */
 	const deleteSelectedRows = useCallback(
-		(api: any) => {
+		(api: ExtendedGridApi) => {
 			try {
 				const selectedNodes = api.getSelectedNodes();
 				if (selectedNodes?.length > 0) {
 					// Separate new rows from existing rows
-					const newRows = selectedNodes.filter(
-						(node: any) => node.data.__isNewRow
-					);
-					const existingRows = selectedNodes.filter(
-						(node: any) => !node.data.__isNewRow
-					);
+					const newRows = selectedNodes.filter((node: IRowNode) => {
+						return node.data && hasRowMetadata(node.data) && node.data.__isNewRow;
+					});
+					const existingRows = selectedNodes.filter((node: IRowNode) => {
+						return node.data && hasRowMetadata(node.data) && !node.data.__isNewRow;
+					});
 
 					// For new rows, just remove them completely (they don't exist in DB yet)
 					if (newRows.length > 0) {
 						// Remove the corresponding "add" operations from undo stack
 						// since we're removing the rows completely
 						// setUndoStack((prev) =>
-						// 	prev.filter(
-						// 		(op) =>
-						// 			!(op.type === "add" && rowIdsToRemove.includes(op.rowId))
-						// 	)
+						//   prev.filter((op) => !newRows.some((node) => node.data.id === op.rowId))
 						// );
 
-						// Remove new rows completely
+						// Remove from grid
 						api.applyTransaction({
-							remove: newRows.map((node: any) => node.data),
+							remove: newRows.map((node: IRowNode) => node.data as T),
 						});
 					}
 
 					// For existing rows, mark them as deleted
 					if (existingRows.length > 0) {
-						// Add to undo stack for existing rows
-
-						// Mark existing rows as deleted
-						const updatedRows = existingRows.map((node: any) => ({
-							...node.data,
-							__isDeleted: true,
-							__isDirty: false,
-							__isNewRow: false,
-							__isFailed: false,
-						}));
-
-						// Update the rows to mark them as deleted
-						api.applyTransaction({
-							update: updatedRows,
+						existingRows.forEach((node: IRowNode) => {
+							if (node.data && hasRowMetadata(node.data)) {
+								node.data.__isDeleted = true;
+								node.data.__isDirty = false; // Clear dirty flag since we're deleting
+							}
 						});
+
+						// Add "remove" operations to undo stack
+						// setUndoStack((prev) => [
+						//   ...prev,
+						//   ...existingRows.map((node) => ({
+						//     type: "remove" as const,
+						//     rowId: node.data.id,
+						//     originalData: { ...node.data },
+						//   })),
+						// ]);
+
+						// Refresh the grid to show visual changes
+						api.refreshCells();
 					}
 
 					// Increment change counter
 					setChangeCounter((prev) => prev + 1);
-
-					// Force refresh to update styling
-					if (api && !api.isDestroyed?.()) {
-						try {
-							api.refreshCells({ force: true });
-							if (!api.isDestroyed?.()) {
-								api.redrawRows();
-							}
-						} catch {
-							// Ignore refresh errors
-						}
-					}
 				}
 			} catch (error) {
-				// Handle case where grid is not ready or destroyed
-				console.warn("Error deleting selected rows:", error);
+				showError(error);
 			}
 		},
-		[primaryKey]
+		[showError, setChangeCounter]
 	);
 
 	/**
-	 * Duplicates selected rows
+	 * Duplicates the selected row
 	 *
-	 * This function creates copies of the selected rows. Each duplicated row:
-	 * - Gets a new temporary ID
-	 * - Is marked as a new row (__isNewRow: true)
-	 * - Is added to the grid using AG Grid's transaction system
+	 * This function creates a copy of the selected row with a new temporary ID.
+	 * The duplicated row is marked as a new row and will be saved when
+	 * saveChanges() is called.
 	 *
 	 * @param api - The AG Grid API instance
 	 */
 	const duplicateSelectedRow = useCallback(
-		(api: any) => {
+		(api: ExtendedGridApi) => {
 			try {
 				const selectedNodes = api.getSelectedNodes();
-				if (selectedNodes?.length > 0) {
-					const newRows = selectedNodes.map((node: any) => ({
-						...node.data,
-						[primaryKey]: generateNewRowTempId(),
-						__isNewRow: true,
-					}));
-					api.applyTransaction({ add: newRows });
-				}
-			} catch (error) {
-				// Handle case where grid is not ready or destroyed
-				console.warn("Error duplicating selected rows:", error);
-			}
-		},
-		[primaryKey]
-	);
+				if (selectedNodes?.length === 1) {
+					const selectedNode = selectedNodes[0];
+					if (selectedNode.data) {
+						const originalData = selectedNode.data as RowWithMetadata;
+						const tempId = generateNewRowTempId();
 
-	/**
-	 * Gets the row ID for AG Grid
-	 *
-	 * This function tells AG Grid how to identify each row. AG Grid uses
-	 * this to track which rows have changed and to optimize updates.
-	 *
-	 * @param params - AG Grid parameters containing the row data
-	 * @returns The row ID as a string
-	 */
-	const getRowId = useCallback(
-		(params: any) => params.data[primaryKey].toString(),
-		[primaryKey]
-	);
+						// Create a new row with the same data but a new ID
+						const duplicatedRow = {
+							...originalData,
+							[primaryKey]: tempId,
+							__isNewRow: true,
+							__isDirty: false,
+							__isDeleted: false,
+							__isFailed: false,
+						} as T;
 
-	/**
-	 * Gets context menu items
-	 *
-	 * This function defines what options appear when users right-click
-	 * on the grid. It includes both built-in AG Grid options and custom
-	 * options for our specific functionality.
-	 *
-	 * @param params - AG Grid parameters containing the grid API and context
-	 * @returns Array of context menu items
-	 */
-	const getContextMenuItems = useCallback(
-		(params: any) => {
-			const items = [
-				"copy",
-				"copyWithHeaders",
-				"paste",
-				{
-					name: "Duplicate Row",
-					action: () => duplicateSelectedRow(params.api),
-				},
-				{
-					name: "Delete Row",
-					action: () => deleteSelectedRows(params.api),
-				},
-			];
-			return items;
-		},
-		[deleteSelectedRows, duplicateSelectedRow]
-	);
+						// Add to grid
+						api.applyTransaction({ add: [duplicatedRow] });
 
-	/**
-	 * Handles cell value changes
-	 *
-	 * This function is called whenever a user edits a cell in the grid.
-	 * It's responsible for:
-	 * 1. Marking the row as dirty (modified)
-	 * 2. Adding the change to the undo stack
-	 * 3. Updating the change counter
-	 * 4. Refreshing the grid to show visual feedback
-	 *
-	 * Important notes:
-	 * - We only track changes for existing rows (not new rows)
-	 * - We store both old and new data for undo/redo functionality
-	 * - We force visual updates to show the modified state
-	 *
-	 * @param event - AG Grid cell value changed event
-	 */
-	const handleCellValueChanged = useCallback(
-		(event: any) => {
-			const rowId = event.data[primaryKey];
-			if (!rowId) return;
-
-			// Mark row as dirty if it's not a new row
-			if (!isTempId(rowId)) {
-				// Create old data for undo (commented out for now)
-				// const _oldData = {
-				// 	...event.data,
-				// 	[event.column.colId]: event.oldValue,
-				// 	__isDirty: false,
-				// 	__isNewRow: false,
-				// 	__isDeleted: false,
-				// };
-
-				// Create new data for undo (commented out for now)
-				// const newData = {
-				// 	...event.data,
-				// 	__isDirty: true,
-				// 	__isNewRow: false,
-				// 	__isDeleted: false,
-				// };
-
-				// Add to undo stack
-				// addToUndoStack({
-				// 	type: "update",
-				// 	rowId,
-				// 	oldData,
-				// 	newData,
-				// });
-
-				// Update the row data directly
-				event.data.__isDirty = true;
-				event.data.__isNewRow = false;
-				event.data.__isDeleted = false;
-
-				// Increment change counter to trigger hasUnsavedChanges re-computation
-				setChangeCounter((prev) => prev + 1);
-
-				// Force immediate visual update
-				if (gridApi && !gridApi.isDestroyed?.()) {
-					try {
-						// Refresh the specific row to update styling
-						gridApi.refreshCells({ rowNodes: [event.node], force: true });
-
-						// Also refresh the entire grid to ensure all styling is updated
-						setTimeout(() => {
-							if (gridApi && !gridApi.isDestroyed?.()) {
-								gridApi.refreshCells({ force: true });
-								// Force a re-render of the row to update class rules
-								if (!gridApi.isDestroyed?.()) {
-									gridApi.redrawRows({ rowNodes: [event.node] });
-								}
-							}
-						}, 0);
-					} catch {
-						// Ignore refresh errors
+						// Increment change counter
+						setChangeCounter((prev) => prev + 1);
 					}
 				}
+			} catch (error) {
+				showError(error);
 			}
 		},
-		[gridApi, primaryKey, setChangeCounter]
+		[primaryKey, showError, setChangeCounter]
 	);
 
 	/**
-	 * Handles cell editing stopped
+	 * Checks if there are any unsaved changes
 	 *
-	 * This function is called when a user finishes editing a cell (by pressing
-	 * Enter, clicking elsewhere, etc.). It ensures that the grid is properly
-	 * refreshed to show any visual updates.
+	 * This function examines the current state of the grid to determine
+	 * if there are any changes that haven't been saved yet. It's used
+	 * to show warnings when users try to navigate away or to enable/disable
+	 * save buttons.
 	 *
-	 * This is important because AG Grid sometimes needs a nudge to update
-	 * its visual state after editing operations.
-	 */
-	const handleCellEditingStopped = useCallback(() => {
-		// Force a refresh when editing stops to ensure visual updates
-		if (gridApi && !gridApi.isDestroyed?.()) {
-			try {
-				gridApi.refreshCells({ force: true });
-			} catch {
-				// Ignore refresh errors
-			}
-		}
-	}, [gridApi]);
-
-	/**
-	 * Gets row class for styling
+	 * The function checks for:
+	 * - New rows that haven't been saved
+	 * - Existing rows that have been modified
+	 * - Rows that have been marked for deletion
 	 *
-	 * This function determines what CSS classes should be applied to each row
-	 * based on its state. These classes are used to style rows differently
-	 * depending on whether they're new, modified, deleted, or failed.
-	 *
-	 * The CSS classes are:
-	 * - ag-row-new: Applied to rows that have been added but not saved
-	 * - ag-row-dirty: Applied to rows that have been modified but not saved
-	 * - ag-row-deleted: Applied to rows that have been marked for deletion
-	 * - ag-row-failed: Applied to rows that failed to save
-	 *
-	 * @param params - AG Grid parameters containing the row data
-	 * @returns Space-separated string of CSS class names
-	 */
-	const getRowClass = useCallback((params: any) => {
-		const classes = [];
-		if (params.data) {
-			if ((params.data as any).__isNewRow) {
-				classes.push("ag-row-new");
-			} else if ((params.data as any).__isDirty) {
-				classes.push("ag-row-dirty");
-			} else if ((params.data as any).__isDeleted) {
-				classes.push("ag-row-deleted");
-			} else if ((params.data as any).__isFailed) {
-				classes.push("ag-row-failed");
-			}
-		}
-		return classes.join(" ");
-	}, []);
-
-	// /**
-	//  * Gets cell class for styling
-	//  *
-	//  * This function determines what CSS classes should be applied to each cell
-	//  * based on the row's state. This is similar to getRowClass but applies
-	//  * styling to individual cells rather than entire rows.
-	//  *
-	//  * Currently commented out because we're using row-level styling instead.
-	//  *
-	//  * @param params - AG Grid parameters containing the cell data
-	//  * @returns Space-separated string of CSS class names
-	//  */
-	// const getCellClass = useCallback((params: any) => {
-	// 	const classes = [];
-	// 	if (params.data) {
-	// 		if ((params.data as any).__isNewRow) {
-	// 			classes.push("ag-cell-new");
-	// 		} else if ((params.data as any).__isDirty) {
-	// 			classes.push("ag-cell-dirty");
-	// 		} else if ((params.data as any).__isDeleted) {
-	// 			classes.push("ag-cell-deleted");
-	// 		} else if ((params.data as any).__isFailed) {
-	// 			classes.push("ag-cell-failed");
-	// 		}
-	// 	}
-	// 	return classes.join(" ");
-	// }, []);
-
-	/**
-	 * Computed value for unsaved changes
-	 *
-	 * This is a computed value that tells us whether there are any unsaved
-	 * changes in the grid. It's used by components to:
-	 * - Show "unsaved changes" warnings
-	 * - Enable/disable save buttons
-	 * - Show navigation warnings when leaving the page
-	 *
-	 * The computation:
-	 * 1. First tries to use AG Grid's native hasChanges() method
-	 * 2. Falls back to manually checking for __isNewRow, __isDirty, or __isDeleted flags
-	 * 3. Returns false if the grid is destroyed or unavailable
-	 *
-	 * The changeCounter dependency ensures this value is recalculated
-	 * whenever we make changes to the grid.
+	 * @returns True if there are unsaved changes, false otherwise
 	 */
 	const hasUnsavedChanges = useMemo(() => {
-		if (!gridApi) {
-			return false;
-		}
+		if (!gridApi) return false;
 
-		// Check if grid is destroyed
-		if (gridApi.isDestroyed && gridApi.isDestroyed()) {
-			return false;
-		}
-
-		// Check if AG Grid's native hasChanges is available
-		if (typeof (gridApi as any).hasChanges === "function") {
-			try {
-				const hasChanges = (gridApi as any).hasChanges();
-				return hasChanges;
-			} catch {
-				// Fall back to manual check
-			}
-		}
-
-		// Fallback: manually check for changes
 		try {
-			const currentData = gridApi
-				.getRenderedNodes()
-				.map((node: any) => node.data);
-
-			const hasChanges = currentData.some(
-				(row: any) =>
-					(row as any).__isNewRow ||
-					(row as any).__isDirty ||
-					(row as any).__isDeleted
-			);
-
-			return hasChanges;
+			const allNodes = gridApi.getRenderedNodes();
+			return allNodes.some((node: IRowNode) => {
+				if (node.data && hasRowMetadata(node.data)) {
+					return (
+						node.data.__isNewRow ||
+						node.data.__isDirty ||
+						node.data.__isDeleted
+					);
+				}
+				return false;
+			});
 		} catch {
+			// Grid might be destroyed or not ready
 			return false;
 		}
 	}, [gridApi, changeCounter]);
 
 	/**
-	 * Return all the functions and values that components can use
+	 * Gets the number of unsaved changes
 	 *
-	 * This object contains everything a component needs to integrate
-	 * with our row management system. Each property is documented
-	 * above in its respective function.
+	 * This function counts the total number of changes that haven't been
+	 * saved yet. It's useful for showing change counts in the UI.
+	 *
+	 * @returns Object with counts of different types of changes
 	 */
+	const getChangeCounts = useMemo(() => {
+		if (!gridApi) return { new: 0, modified: 0, deleted: 0 };
+
+		try {
+			const allNodes = gridApi.getRenderedNodes();
+			let newCount = 0;
+			let modifiedCount = 0;
+			let deletedCount = 0;
+
+			allNodes.forEach((node: IRowNode) => {
+				if (node.data && hasRowMetadata(node.data)) {
+					if (node.data.__isNewRow) newCount++;
+					if (node.data.__isDirty && !node.data.__isNewRow) modifiedCount++;
+					if (node.data.__isDeleted) deletedCount++;
+				}
+			});
+
+			return { new: newCount, modified: modifiedCount, deleted: deletedCount };
+		} catch {
+			return { new: 0, modified: 0, deleted: 0 };
+		}
+	}, [gridApi, changeCounter]);
+
+	/**
+	 * Gets the primary key value for a row
+	 *
+	 * This function extracts the primary key value from a row object.
+	 * It's used for identifying rows in operations like deletion.
+	 *
+	 * @param params - AG Grid cell renderer parameters
+	 * @returns The primary key value as a string
+	 */
+	const getPrimaryKeyValue = useCallback(
+		(params: { data: RowWithMetadata }) => {
+			const value = params.data[primaryKey];
+			return typeof value === "string" ? value : String(value);
+		},
+		[primaryKey]
+	);
+
+	/**
+	 * Gets CSS classes for row styling
+	 *
+	 * This function returns CSS classes based on the row's state.
+	 * It's used to provide visual feedback about row status.
+	 *
+	 * @param params - AG Grid row class parameters
+	 * @returns CSS class string
+	 */
+	const getRowClass = useCallback((params: { data: RowWithMetadata }) => {
+		const classes: string[] = [];
+
+		if (params.data.__isNewRow) {
+			classes.push("ag-row-new");
+		}
+		if (params.data.__isDirty) {
+			classes.push("ag-row-dirty");
+		}
+		if (params.data.__isDeleted) {
+			classes.push("ag-row-deleted");
+		}
+		if (params.data.__isFailed) {
+			classes.push("ag-row-failed");
+		}
+
+		return classes.join(" ");
+	}, []);
+
+	/**
+	 * Gets CSS classes for cell styling
+	 *
+	 * This function returns CSS classes for individual cells based on
+	 * the cell's state and the row's state.
+	 *
+	 * @param params - AG Grid cell class parameters
+	 * @returns CSS class string
+	 */
+	// const getCellClass = useCallback((params: { data: RowWithMetadata; colDef: ColDef }) => {
+	//   const classes: string[] = [];
+	//
+	//   if (params.data.__isNewRow) {
+	//     classes.push("ag-cell-new");
+	//   }
+	//   if (params.data.__isDirty && params.colDef.editable) {
+	//     classes.push("ag-cell-dirty");
+	//   }
+	//   if (params.data.__isDeleted) {
+	//     classes.push("ag-cell-deleted");
+	//   }
+	//   if (params.data.__isFailed) {
+	//     classes.push("ag-cell-failed");
+	//   }
+	//
+	//   return classes.join(" ");
+	// }, []);
+
+	/**
+	 * Handles cell value changes
+	 *
+	 * This function is called when a cell value is changed. It updates
+	 * the change tracking flags and triggers UI updates.
+	 *
+	 * @param event - AG Grid cell value changed event
+	 */
+	const handleCellValueChanged = useCallback(
+		(event: { data: RowWithMetadata; colDef: ColDef<T> }) => {
+			if (event.data && hasRowMetadata(event.data)) {
+				// Mark as dirty if it's not a new row
+				if (!event.data.__isNewRow) {
+					event.data.__isDirty = true;
+				}
+
+				// Increment change counter to trigger UI updates
+				setChangeCounter((prev) => prev + 1);
+			}
+		},
+		[setChangeCounter]
+	);
+
+	/**
+	 * Gets the current row data with metadata
+	 *
+	 * This function returns the current row data from the grid with
+	 * all the metadata flags intact. It's useful for debugging or
+	 * for operations that need to examine the current state.
+	 *
+	 * @returns Array of row data with metadata
+	 */
+	const getCurrentRowData = useCallback(() => {
+		if (!gridApi) return [];
+
+		try {
+			return gridApi
+				.getRenderedNodes()
+				.map((node: IRowNode) => node.data as RowWithMetadata)
+				.filter(Boolean);
+		} catch {
+			return [];
+		}
+	}, [gridApi]);
+
 	return {
-		hasUnsavedChanges,
 		addNewRow,
 		saveChanges,
 		clearChanges,
-		getRowId,
-		getContextMenuItems,
-		handleCellValueChanged,
-		handleCellEditingStopped,
 		deleteSelectedRows,
 		duplicateSelectedRow,
+		hasUnsavedChanges,
+		getChangeCounts,
+		getPrimaryKeyValue,
 		getRowClass,
-		//getCellClass,
+		// getCellClass,
+		handleCellValueChanged,
+		getCurrentRowData,
 	};
 };

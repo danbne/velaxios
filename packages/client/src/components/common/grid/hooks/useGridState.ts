@@ -6,6 +6,23 @@ import type { GridApi, GridReadyEvent } from "ag-grid-enterprise";
  */
 export type GridStateType = "loading" | "loaded" | "ready" | "error";
 
+interface GridState {
+	columnState?: Array<{
+		colId: string;
+		[key: string]: unknown;
+	}>;
+	columnVisibility?: {
+		hiddenColIds: string[];
+		[key: string]: unknown;
+	};
+	columnPinned?: {
+		leftColIds?: string[];
+		rightColIds?: string[];
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+}
+
 /**
  * Props interface for the useGridState hook
  *
@@ -47,7 +64,7 @@ export const useGridState = <T>({
 	/** Consolidated grid state tracking the complete lifecycle */
 	const [gridState, setGridState] = useState<GridStateType>("loading");
 	/** Saved grid state for restoration (currently not used) */
-	const [savedState] = useState<any>(null);
+	const [savedState] = useState<GridState | null>(null);
 
 	// Store the fetchData function in a ref to prevent infinite loops
 	const fetchDataRef = useRef(fetchData);
@@ -82,7 +99,7 @@ export const useGridState = <T>({
 			const state = gridApi.getState();
 
 			// Filter out the actions column from the saved state
-			const filteredState = { ...state } as any;
+			const filteredState = { ...state } as GridState;
 
 			// Remove actions column from column state if it exists
 			if (
@@ -90,7 +107,7 @@ export const useGridState = <T>({
 				Array.isArray(filteredState.columnState)
 			) {
 				filteredState.columnState = filteredState.columnState.filter(
-					(col: any) => col.colId !== "actions"
+					(col) => col.colId !== "actions"
 				);
 			}
 

@@ -1,5 +1,15 @@
 import { useMemo } from "react";
 import { createGridConfiguration } from "../GridConfig";
+import type { ColDef } from "../BaseGrid";
+
+interface LayoutData {
+	[key: string]: unknown;
+}
+
+interface LayoutSaveParams {
+	layoutData: LayoutData;
+	layoutName?: string;
+}
 
 /**
  * Props interface for the useGridConfiguration hook
@@ -10,11 +20,11 @@ interface UseGridConfigurationProps {
 	/** Unique identifier for the grid instance */
 	gridId: string;
 	/** Function to handle layout changes */
-	handleLayoutChange: (layout: any) => void;
+	handleLayoutChange: (layout: LayoutData) => void;
 	/** Function to handle layout saves */
-	handleLayoutSave: (params: any) => Promise<void>;
+	handleLayoutSave: (params: LayoutSaveParams) => Promise<void>;
 	/** Default column configuration */
-	defaultColDef?: any;
+	defaultColDef?: ColDef;
 }
 
 /**

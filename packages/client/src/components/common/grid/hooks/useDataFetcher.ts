@@ -1,12 +1,16 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useApiGet } from "./useApiClient";
+
+interface ApiResponse<T> {
+	[key: string]: T[] | T;
+}
 
 export const useDataFetcher = <T>(endpoint: string) => {
 	// Remove the base URL from the endpoint if it's already included
 	const cleanEndpoint = endpoint.replace(/^https?:\/\/[^/]+/, "");
 
 	// Use the new API client hook
-	const { data, error, isLoading, refetch } = useApiGet<any>(
+	const { data, error, isLoading, refetch } = useApiGet<ApiResponse<T>>(
 		["data", cleanEndpoint],
 		cleanEndpoint,
 		{
@@ -26,10 +30,10 @@ export const useDataFetcher = <T>(endpoint: string) => {
 		return async (): Promise<T[]> => {
 			try {
 				const result = await refetch();
-				const resultData = result.data;
+				const resultData = result.data as ApiResponse<T>;
 				const resultItems =
 					(endpointName && resultData?.[endpointName]) || resultData || [];
-				return resultItems as T[];
+				return Array.isArray(resultItems) ? resultItems : [];
 			} catch (error) {
 				throw error;
 			}
@@ -37,7 +41,7 @@ export const useDataFetcher = <T>(endpoint: string) => {
 	}, [refetch, endpointName]);
 
 	return {
-		data: items as T[],
+		data: Array.isArray(items) ? items : [],
 		error,
 		isLoading,
 		refetch,

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import type { GridApi } from "ag-grid-community";
 
 /**
  * Props interface for the useGridActions hook
@@ -9,9 +10,9 @@ interface UseGridActionsProps<T> {
 	/** Function to update row data */
 	setRowData: React.Dispatch<React.SetStateAction<T[]>>;
 	/** Function to delete selected rows */
-	deleteSelectedRows: (gridApi: any) => void;
+	deleteSelectedRows: (gridApi: GridApi) => void;
 	/** Function to duplicate selected row */
-	duplicateSelectedRow: (gridApi: any) => void;
+	duplicateSelectedRow: (gridApi: GridApi) => void;
 	/** Function to save changes */
 	saveChanges: () => Promise<void>;
 	/** Function to clear changes */
@@ -19,11 +20,11 @@ interface UseGridActionsProps<T> {
 	/** Function to fetch fresh data */
 	fetchData: () => Promise<T[]>;
 	/** Function to show errors */
-	showError: (error: any) => void;
+	showError: (error: unknown) => void;
 	/** Function to set loading state */
 	setIsLoading: (loading: boolean) => void;
 	/** AG Grid API instance */
-	gridApi?: any;
+	gridApi?: GridApi;
 }
 
 /**

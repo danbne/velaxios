@@ -1,6 +1,11 @@
 import LayoutsToolPanel from "../layouts/LayoutsToolPanel";
 import LayoutStatusPanel from "../layouts/LayoutStatusPanel";
 
+interface CustomWindow extends Window {
+	agLayoutsToolPanel?: typeof LayoutsToolPanel;
+	agLayoutStatusPanel?: typeof LayoutStatusPanel;
+}
+
 /**
  * Registers custom AG Grid components globally
  *
@@ -19,10 +24,11 @@ import LayoutStatusPanel from "../layouts/LayoutStatusPanel";
  */
 export const registerGridComponents = () => {
 	if (typeof window !== "undefined") {
+		const customWindow = window as CustomWindow;
 		// Register custom tool panel for layout management
-		(window as any).agLayoutsToolPanel = LayoutsToolPanel;
+		customWindow.agLayoutsToolPanel = LayoutsToolPanel;
 		// Register custom status panel for layout information
-		(window as any).agLayoutStatusPanel = LayoutStatusPanel;
+		customWindow.agLayoutStatusPanel = LayoutStatusPanel;
 	}
 };
 

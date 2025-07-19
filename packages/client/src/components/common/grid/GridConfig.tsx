@@ -1,5 +1,9 @@
 import type { ColDef } from "./BaseGrid";
 
+interface LayoutData {
+	[key: string]: unknown;
+}
+
 /**
  * Creates the status bar configuration for the grid
  *
@@ -16,7 +20,7 @@ import type { ColDef } from "./BaseGrid";
  */
 export const createStatusBar = (
 	gridId?: string,
-	onLayoutSave?: (layoutData: any) => void
+	onLayoutSave?: (layoutData: LayoutData) => void
 ) => {
 	return {
 		statusPanels: [
@@ -62,8 +66,8 @@ export const createStatusBar = (
 export const createSideBar = (
 	sideBarEnabled: boolean,
 	gridId?: string,
-	onLayoutChange?: (layoutData: any) => void,
-	onLayoutSave?: (layoutData: any) => void
+	onLayoutChange?: (layoutData: LayoutData) => void,
+	onLayoutSave?: (layoutData: LayoutData) => void
 ) => {
 	if (sideBarEnabled) {
 		return {
@@ -175,8 +179,8 @@ export const createGridConfiguration = <T,>({
 }: {
 	sideBarEnabled: boolean;
 	gridId: string;
-	handleLayoutChange: (layoutData: any) => void;
-	handleLayoutSave: (layoutData: any) => void;
+	handleLayoutChange: (layoutData: LayoutData) => void;
+	handleLayoutSave: (layoutData: LayoutData) => void;
 	defaultColDef?: Partial<ColDef<T>>;
 }) => {
 	return {
