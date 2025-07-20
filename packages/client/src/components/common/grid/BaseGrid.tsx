@@ -5,9 +5,8 @@ import { useMemo } from "react";
 
 import type { ColDef } from "ag-grid-enterprise";
 
-// Core CSS
-import "../grid/ag-grid-theme.css";
-import "../../../styles/grid-styles.css";
+// Core CSS - theme is now imported globally
+import "../../../styles/theme.css";
 
 // Modular components and hooks
 import GridRenderer from "./components/GridRenderer";
@@ -116,11 +115,11 @@ const BaseGrid = <T,>({
 	});
 
 	// Layout management
-	const { 
+	const {
 		currentLayout,
-		handleLayoutChange, 
+		handleLayoutChange,
 		handleLayoutSave,
-		restoreDefaultLayout
+		restoreDefaultLayout,
 	} = useLayoutManager({
 		gridId,
 		gridApi,
@@ -158,7 +157,10 @@ const BaseGrid = <T,>({
 				handleLayoutChange({ layoutId });
 			}
 		},
-		handleLayoutSave: (params: { layoutData: { [key: string]: unknown }; layoutName?: string }) => {
+		handleLayoutSave: (params: {
+			layoutData: { [key: string]: unknown };
+			layoutName?: string;
+		}) => {
 			// Extract layoutId from the params
 			const layoutId = params.layoutData.layoutId as string;
 			if (layoutId) {
@@ -178,7 +180,7 @@ const BaseGrid = <T,>({
 	return (
 		<GridRenderer
 			shouldShowGrid={shouldShowGrid}
-			errorPopup={typeof errorPopup === 'string' ? errorPopup : null}
+			errorPopup={typeof errorPopup === "string" ? errorPopup : null}
 			showDialog={showDialog}
 			flashRed={flashRed}
 			clearError={clearError}

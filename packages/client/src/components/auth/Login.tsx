@@ -30,26 +30,26 @@ const Login: React.FC = () => {
 				alignItems: "center",
 				justifyContent: "center",
 				height: "100vh",
-				backgroundColor: "#f5f5f5",
+				backgroundColor: "var(--bg-secondary)",
 			}}
 		>
 			<button
 				onClick={handleMicrosoftLogin}
 				style={{
 					backgroundColor: "#0078d4",
-					color: "white",
-					padding: "12px 24px",
-					borderRadius: "6px",
+					color: "var(--text-light)",
+					padding: "var(--spacing-sm) var(--spacing-lg)",
+					borderRadius: "var(--radius-md)",
 					border: "none",
-					fontSize: "16px",
+					fontSize: "var(--font-size-base)",
 					fontWeight: "500",
 					cursor: "pointer",
-					transition: "background-color 0.2s",
+					transition: "background-color var(--transition-normal)",
 				}}
-				onMouseOver={(e) => {
+				onMouseOver={e => {
 					e.currentTarget.style.backgroundColor = "#106ebe";
 				}}
-				onMouseOut={(e) => {
+				onMouseOut={e => {
 					e.currentTarget.style.backgroundColor = "#0078d4";
 				}}
 			>

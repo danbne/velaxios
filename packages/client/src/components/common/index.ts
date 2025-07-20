@@ -15,17 +15,4 @@ export {
 } from "./Dialog";
 
 // Theme system
-export { default as theme } from "../../styles/theme";
-export {
-	colors,
-	typography,
-	spacing,
-	borderRadius,
-	shadows,
-	transitions,
-	zIndex,
-	componentThemes,
-	createThemeStyles,
-	mergeStyles,
-	responsive,
-} from "../../styles/theme";
+export { default as theme } from "@styles/theme.css";

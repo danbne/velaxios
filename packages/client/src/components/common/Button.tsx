@@ -1,8 +1,11 @@
 import React from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	variant?: "primary" | "secondary" | "accent";
+	variant?: "primary" | "secondary" | "accent" | "outline";
 	size?: "sm" | "md" | "lg";
+	children: React.ReactNode;
+	className?: string;
+	style?: React.CSSProperties;
 }
 
 /**
@@ -13,9 +16,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
  * and proper TypeScript support.
  *
  * Features:
- * - Multiple variants (primary, secondary, accent)
+ * - Multiple variants (primary, secondary, accent, outline)
  * - Multiple sizes (sm, md, lg)
- * - Clean styling
+ * - Clean styling using theme variables
  * - Proper accessibility attributes
  * - TypeScript support with HTML button props
  *
@@ -34,56 +37,30 @@ const Button: React.FC<ButtonProps> = ({
 	style,
 	...props
 }) => {
-	// Base button styles
-	const baseStyles: React.CSSProperties = {
-		border: "none",
-		borderRadius: "4px",
-		cursor: "pointer",
-		fontWeight: "500",
-		transition: "all 0.2s",
-		display: "inline-flex",
-		alignItems: "center",
-		justifyContent: "center",
-		textDecoration: "none",
-		outline: "none",
+	// Base button classes
+	const baseClasses = "btn";
+
+	// Variant-specific classes
+	const variantClasses: Record<string, string> = {
+		primary: "btn-primary",
+		secondary: "btn-secondary",
+		accent: "btn-accent",
+		outline: "btn-outline",
 	};
 
-	// Variant-specific styles
-	const variantStyles: Record<string, React.CSSProperties> = {
-		primary: {
-			backgroundColor: "#0078d4",
-			color: "white",
-			border: "1px solid #0078d4",
-		},
-		secondary: {
-			backgroundColor: "#6b7280",
-			color: "white",
-			border: "1px solid #6b7280",
-		},
-		accent: {
-			backgroundColor: "#10b981",
-			color: "white",
-			border: "1px solid #10b981",
-		},
+	// Size-specific classes
+	const sizeClasses: Record<string, string> = {
+		sm: "btn-sm",
+		md: "", // Default size
+		lg: "btn-lg",
 	};
 
-	// Size-specific styles
-	const sizeStyles: Record<string, React.CSSProperties> = {
-		sm: { padding: "4px 8px", fontSize: "0.875rem" },
-		md: { padding: "8px 16px", fontSize: "1rem" },
-		lg: { padding: "12px 24px", fontSize: "1.125rem" },
-	};
-
-	// Merge all styles
-	const buttonStyles: React.CSSProperties = {
-		...baseStyles,
-		...variantStyles[variant],
-		...sizeStyles[size],
-		...style,
-	};
+	// Combine all classes
+	const buttonClasses =
+		`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim();
 
 	return (
-		<button className={className} style={buttonStyles} {...props}>
+		<button className={buttonClasses} style={style} {...props}>
 			{children}
 		</button>
 	);

@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { API_ENDPOINTS } from "../../config/api";
+import { API_ENDPOINTS } from "@config/api";
 import { createDateColumn } from "../../utils/dateFormatters";
-import BaseGrid, { type ColDef } from "../common/grid/BaseGrid";
+//import BaseGrid, { type ColDef } from "../common/grid/BaseGrid";
+import { AgGridExtended } from "../common/grid-template/AgGridExtended";
+import type { ColDef } from "ag-grid-community";
 
 interface Project {
 	project_id: string;
@@ -42,8 +44,8 @@ const ProjectGrid = () => {
 
 	return (
 		<div style={{ height: "100%", width: "100%" }}>
-			<BaseGrid<Project>
-				gridId="project-grid"
+			<AgGridExtended
+				//gridId="project-grid"
 				endpoint={API_ENDPOINTS.PROJECTS}
 				colDefs={colDefs}
 				primaryKey="project_id"

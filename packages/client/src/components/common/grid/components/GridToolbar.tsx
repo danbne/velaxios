@@ -8,7 +8,12 @@ import { SideBarModule } from "ag-grid-enterprise";
 import { StatusBarModule } from "ag-grid-enterprise";
 import { ColumnsToolPanelModule } from "ag-grid-enterprise";
 import { NewFiltersToolPanelModule } from "ag-grid-enterprise";
-import { useApiGet, useApiPost, useApiPut, useApiDelete } from "../hooks/useApiClient";
+import {
+	useApiGet,
+	useApiPost,
+	useApiPut,
+	useApiDelete,
+} from "../hooks/useApiClient";
 import { API_ENDPOINTS } from "../../../../config/api";
 import Dialog from "../../Dialog";
 import type { Layout } from "../layouts/types";
@@ -94,7 +99,9 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 		const [selectedCount, setSelectedCount] = useState(0);
 
 		// Layout management state
-		const [selectedLayoutId, setSelectedLayoutId] = useState<string>(currentLayoutId || "");
+		const [selectedLayoutId, setSelectedLayoutId] = useState<string>(
+			currentLayoutId || ""
+		);
 		const [showSaveLayoutModal, setShowSaveLayoutModal] = useState(false);
 		const [showSaveAsModal, setShowSaveAsModal] = useState(false);
 		const [showManageViewsModal, setShowManageViewsModal] = useState(false);
@@ -104,7 +111,9 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 		const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 		// Fetch layouts if gridId is provided
-		const { data: layoutsData, isLoading: layoutsLoading } = useApiGet<{ gridLayout: Layout[] }>(
+		const { data: layoutsData, isLoading: layoutsLoading } = useApiGet<{
+			gridLayout: Layout[];
+		}>(
 			["layouts", gridId || ""],
 			gridId ? API_ENDPOINTS.GRID_LAYOUTS(gridId) : "",
 			{
@@ -179,7 +188,7 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 
 		const handleLayoutChange = async (layoutId: string) => {
 			if (!layoutId) return;
-			
+
 			setSelectedLayoutId(layoutId);
 			if (onLayoutChange) {
 				// Call the layout change handler with the layout ID
@@ -193,14 +202,14 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 			try {
 				// Get current grid state
 				const currentState = gridApi.getState();
-				
+
 				// Ensure we have valid state data
-				if (!currentState || typeof currentState !== 'object') {
+				if (!currentState || typeof currentState !== "object") {
 					console.error("Invalid grid state:", currentState);
 					// Use empty object as fallback
 					const fallbackState = {};
 					console.log("Using fallback state:", fallbackState);
-					
+
 					// Create new layout with fallback state
 					const newLayout = await createLayoutMutation.mutateAsync({
 						endpoint: API_ENDPOINTS.GRID_LAYOUTS(gridId),
@@ -250,14 +259,14 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 			try {
 				// Get current grid state
 				const currentState = gridApi.getState();
-				
+
 				// Ensure we have valid state data
-				if (!currentState || typeof currentState !== 'object') {
+				if (!currentState || typeof currentState !== "object") {
 					console.error("Invalid grid state:", currentState);
 					// Use empty object as fallback
 					const fallbackState = {};
 					console.log("Using fallback state:", fallbackState);
-					
+
 					// Create new layout with fallback state
 					const newLayout = await createLayoutMutation.mutateAsync({
 						endpoint: API_ENDPOINTS.GRID_LAYOUTS(gridId),
@@ -354,7 +363,9 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 			}
 		};
 
-		const currentLayout = layouts.find(layout => layout.layout_id === selectedLayoutId);
+		const currentLayout = layouts.find(
+			layout => layout.layout_id === selectedLayoutId
+		);
 
 		return (
 			<>
@@ -440,8 +451,12 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 													cursor: "pointer",
 													borderBottom: "1px solid #f0f0f0",
 												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+												onMouseEnter={e =>
+													(e.currentTarget.style.backgroundColor = "#f5f5f5")
+												}
+												onMouseLeave={e =>
+													(e.currentTarget.style.backgroundColor = "white")
+												}
 											>
 												📂 Open View
 											</div>
@@ -455,8 +470,12 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 													cursor: "pointer",
 													borderBottom: "1px solid #f0f0f0",
 												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+												onMouseEnter={e =>
+													(e.currentTarget.style.backgroundColor = "#f5f5f5")
+												}
+												onMouseLeave={e =>
+													(e.currentTarget.style.backgroundColor = "white")
+												}
 											>
 												💾 Save View
 											</div>
@@ -470,8 +489,12 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 													cursor: "pointer",
 													borderBottom: "1px solid #f0f0f0",
 												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+												onMouseEnter={e =>
+													(e.currentTarget.style.backgroundColor = "#f5f5f5")
+												}
+												onMouseLeave={e =>
+													(e.currentTarget.style.backgroundColor = "white")
+												}
 											>
 												📄 Save View As
 											</div>
@@ -485,8 +508,12 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 													cursor: "pointer",
 													borderBottom: "1px solid #f0f0f0",
 												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+												onMouseEnter={e =>
+													(e.currentTarget.style.backgroundColor = "#f5f5f5")
+												}
+												onMouseLeave={e =>
+													(e.currentTarget.style.backgroundColor = "white")
+												}
 											>
 												⚙️ Manage Views
 											</div>
@@ -499,8 +526,12 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 													padding: "8px 12px",
 													cursor: "pointer",
 												}}
-												onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
-												onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+												onMouseEnter={e =>
+													(e.currentTarget.style.backgroundColor = "#f5f5f5")
+												}
+												onMouseLeave={e =>
+													(e.currentTarget.style.backgroundColor = "white")
+												}
 											>
 												🔄 Restore to Default
 											</div>
@@ -528,7 +559,7 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 								hasSelectedRows
 									? `Delete ${selectedCount} Selected Row${
 											selectedCount > 1 ? "s" : ""
-									  }`
+										}`
 									: "No rows selected"
 							}
 							onClick={onDeleteRows}
@@ -540,21 +571,25 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 								hasSelectedRows
 									? `Duplicate ${selectedCount} Selected Row${
 											selectedCount > 1 ? "s" : ""
-									  }`
+										}`
 									: "No rows selected"
 							}
 							onClick={onDuplicateRow}
 							disabled={!hasSelectedRows}
 						/>
 						<GridToolbarButton
-							icon=" 💾"
+							icon="💾"
 							tooltip={hasUnsavedChanges ? "Save Changes" : "Save"}
 							onClick={handleSave}
 							disabled={!hasUnsavedChanges}
 							isSaveButton={true}
 							hasUnsavedChanges={hasUnsavedChanges}
 						/>
-						<GridToolbarButton icon="🔄" tooltip="Refresh" onClick={onRefresh} />
+						<GridToolbarButton
+							icon="🔄"
+							tooltip="Refresh"
+							onClick={onRefresh}
+						/>
 					</div>
 				</div>
 
@@ -602,14 +637,21 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 					}
 				>
 					<div style={{ marginBottom: "12px" }}>
-						<label htmlFor="layout-name" style={{ display: "block", marginBottom: "4px", fontSize: "14px" }}>
+						<label
+							htmlFor="layout-name"
+							style={{
+								display: "block",
+								marginBottom: "4px",
+								fontSize: "14px",
+							}}
+						>
 							View Name:
 						</label>
 						<input
 							id="layout-name"
 							type="text"
 							value={newLayoutName}
-							onChange={(e) => setNewLayoutName(e.target.value)}
+							onChange={e => setNewLayoutName(e.target.value)}
 							placeholder="Enter view name..."
 							style={{
 								width: "100%",
@@ -618,7 +660,7 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 								borderRadius: "4px",
 								fontSize: "14px",
 							}}
-							onKeyDown={(e) => {
+							onKeyDown={e => {
 								if (e.key === "Enter" && newLayoutName.trim()) {
 									handleSaveLayout();
 								}
@@ -671,14 +713,21 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 					}
 				>
 					<div style={{ marginBottom: "12px" }}>
-						<label htmlFor="layout-name-as" style={{ display: "block", marginBottom: "4px", fontSize: "14px" }}>
+						<label
+							htmlFor="layout-name-as"
+							style={{
+								display: "block",
+								marginBottom: "4px",
+								fontSize: "14px",
+							}}
+						>
 							View Name:
 						</label>
 						<input
 							id="layout-name-as"
 							type="text"
 							value={newLayoutName}
-							onChange={(e) => setNewLayoutName(e.target.value)}
+							onChange={e => setNewLayoutName(e.target.value)}
 							placeholder="Enter new view name..."
 							style={{
 								width: "100%",
@@ -687,7 +736,7 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 								borderRadius: "4px",
 								fontSize: "14px",
 							}}
-							onKeyDown={(e) => {
+							onKeyDown={e => {
 								if (e.key === "Enter" && newLayoutName.trim()) {
 									handleSaveAsLayout();
 								}
@@ -730,16 +779,36 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 									padding: "8px 12px",
 									cursor: "pointer",
 									borderBottom: "1px solid #f0f0f0",
-									backgroundColor: layout.layout_id === selectedLayoutId ? "#e3f2fd" : "white",
+									backgroundColor:
+										layout.layout_id === selectedLayoutId ? "#e3f2fd" : "white",
 								}}
-								onMouseEnter={(e) => e.currentTarget.style.backgroundColor = layout.layout_id === selectedLayoutId ? "#e3f2fd" : "#f5f5f5"}
-								onMouseLeave={(e) => e.currentTarget.style.backgroundColor = layout.layout_id === selectedLayoutId ? "#e3f2fd" : "white"}
+								onMouseEnter={e =>
+									(e.currentTarget.style.backgroundColor =
+										layout.layout_id === selectedLayoutId
+											? "#e3f2fd"
+											: "#f5f5f5")
+								}
+								onMouseLeave={e =>
+									(e.currentTarget.style.backgroundColor =
+										layout.layout_id === selectedLayoutId ? "#e3f2fd" : "white")
+								}
 							>
-								<div style={{ fontWeight: layout.layout_id === selectedLayoutId ? "bold" : "normal" }}>
+								<div
+									style={{
+										fontWeight:
+											layout.layout_id === selectedLayoutId ? "bold" : "normal",
+									}}
+								>
 									{layout.layout_name} {layout.is_default ? "(Default)" : ""}
 								</div>
 								{layout.layout_id === selectedLayoutId && (
-									<div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
+									<div
+										style={{
+											fontSize: "12px",
+											color: "#666",
+											marginTop: "2px",
+										}}
+									>
 										Current View
 									</div>
 								)}
@@ -788,13 +857,24 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 									backgroundColor: "white",
 								}}
 							>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+									}}
+								>
 									<div style={{ flex: 1 }}>
 										{editingLayout?.layout_id === layout.layout_id ? (
 											<input
 												type="text"
 												value={editingLayout.layout_name}
-												onChange={(e) => setEditingLayout({ ...editingLayout, layout_name: e.target.value })}
+												onChange={e =>
+													setEditingLayout({
+														...editingLayout,
+														layout_name: e.target.value,
+													})
+												}
 												style={{
 													width: "100%",
 													padding: "4px 8px",
@@ -805,7 +885,8 @@ const GridToolbar: React.FC<GridToolbarProps> = memo(
 											/>
 										) : (
 											<div style={{ fontWeight: "bold" }}>
-												{layout.layout_name} {layout.is_default ? "(Default)" : ""}
+												{layout.layout_name}{" "}
+												{layout.is_default ? "(Default)" : ""}
 											</div>
 										)}
 									</div>

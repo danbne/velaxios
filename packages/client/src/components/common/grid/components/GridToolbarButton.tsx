@@ -9,7 +9,7 @@ interface ToolbarButtonProps {
 	/** Tooltip text shown on hover */
 	tooltip: string;
 	/** Click handler function */
-	onClick?: () => void;
+	onClick: () => void;
 	/** Whether the button is disabled */
 	disabled?: boolean;
 	/** Whether this is the save button (affects styling) */
@@ -43,11 +43,11 @@ const GridToolbarButton: React.FC<ToolbarButtonProps> = ({
 	hasUnsavedChanges = false,
 }) => {
 	// Determine button color based on type and state
-	let buttonColor = "#333";
+	let buttonColor = "var(--text-primary)";
 	if (disabled) {
-		buttonColor = "#ccc";
+		buttonColor = "var(--text-muted)";
 	} else if (isSaveButton && hasUnsavedChanges) {
-		buttonColor = "#007bff"; // Blue for save button with changes
+		buttonColor = "var(--info)"; // Blue for save button with changes
 	}
 
 	return (
@@ -59,13 +59,13 @@ const GridToolbarButton: React.FC<ToolbarButtonProps> = ({
 			style={{
 				background: "none",
 				border: "none",
-				padding: "8px",
-				margin: "0 2px",
+				padding: "var(--spacing-sm)",
+				margin: "0 var(--spacing-xs)",
 				cursor: disabled ? "not-allowed" : "pointer",
-				borderRadius: "4px",
+				borderRadius: "var(--radius-sm)",
 				color: buttonColor,
-				fontSize: "16px",
-				transition: "color 0.2s ease",
+				fontSize: "var(--font-size-base)",
+				transition: "color var(--transition-normal)",
 			}}
 		>
 			{icon}

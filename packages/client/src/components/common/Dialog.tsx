@@ -17,7 +17,7 @@ interface DialogProps {
  * It includes proper accessibility features like focus management and ARIA attributes.
  *
  * Features:
- * - Clean styling
+ * - Clean styling using theme variables
  * - Proper accessibility attributes
  * - Focus management
  * - Customizable header and footer
@@ -62,17 +62,17 @@ const Dialog: React.FC<DialogProps> = ({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		backgroundColor: "rgba(0, 0, 0, 0.5)",
+		backgroundColor: "var(--bg-overlay)",
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "center",
-		zIndex: 1000,
+		zIndex: "var(--z-modal)",
 	};
 
 	const containerStyles: React.CSSProperties = {
-		backgroundColor: "white",
-		borderRadius: "8px",
-		boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+		backgroundColor: "var(--bg-primary)",
+		borderRadius: "var(--radius-lg)",
+		boxShadow: "var(--shadow-lg)",
 		maxWidth: "500px",
 		width: "90%",
 		maxHeight: "80vh",
@@ -81,22 +81,22 @@ const Dialog: React.FC<DialogProps> = ({
 	};
 
 	const headerStyles: React.CSSProperties = {
-		padding: "16px 20px",
-		borderBottom: "1px solid #e5e7eb",
+		padding: "var(--spacing-md) var(--spacing-lg)",
+		borderBottom: "1px solid var(--border-light)",
 		fontWeight: "600",
-		fontSize: "18px",
+		fontSize: "var(--font-size-lg)",
 	};
 
 	const contentStyles: React.CSSProperties = {
-		padding: "20px",
+		padding: "var(--spacing-lg)",
 	};
 
 	const footerStyles: React.CSSProperties = {
-		padding: "16px 20px",
-		borderTop: "1px solid #e5e7eb",
+		padding: "var(--spacing-md) var(--spacing-lg)",
+		borderTop: "1px solid var(--border-light)",
 		display: "flex",
 		justifyContent: "flex-end",
-		gap: "8px",
+		gap: "var(--spacing-sm)",
 	};
 
 	return (
